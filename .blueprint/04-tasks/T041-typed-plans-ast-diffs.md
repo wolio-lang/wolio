@@ -45,10 +45,11 @@ Out of scope (owner):
   `symbols`) and `capabilities`, with maximum AST depth 128. Every operation has
   `kind`, `target` (omitted only for `create_declaration`), `expected_old_hash`
   (null only for create) and typed `payload` (MUTATION_SCHEMA_V1).
-- Payloads encode CORE_V1 AST nodes as tagged JSON objects; raw source strings,
-  patches, byte offsets, arbitrary file paths, source spans, unknown tags or
-  fields, duplicate set entries and high-level aliases (`create_operation`) are
-  rejected before staging (LOCAL_PROTOCOL_V1, MUTATION_SCHEMA_V1).
+- Payloads encode CORE_V1 AST nodes either as structured JSON objects or as
+  canonical Wolio source code strings (`code: string`) parsed server-side by
+  `wolio-parser` into validated AST fragments; arbitrary file writes, unprincipled
+  line/regex diff patches, byte offsets, and modifying code outside declared target
+  symbols remain strictly forbidden (LOCAL_PROTOCOL_V1, MUTATION_SCHEMA_V1).
 - `create_declaration` requires a vacant semantic key in an existing module;
   `add_test` targets the tested operation and requires a vacant test identity;
   other operations verify `expected_old_hash` against the target's normalized

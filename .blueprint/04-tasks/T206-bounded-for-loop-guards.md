@@ -8,7 +8,7 @@
 | Depends on | T205 |
 | Blocks | T207 |
 | Acceptance families | V2-LOOP |
-| Bounded areas | `crates/wolio-resolver`, `crates/wolio-types`, `crates/wolio-contracts`, `crates/wolio-verify`, `crates/wolio-runtime` |
+| Bounded areas | `crates/wolio-semantic` (submodules `resolver`, `types`, `contracts`), `crates/wolio-verify`, `crates/wolio-runtime` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T206.md` |
 
@@ -24,11 +24,11 @@ guards.
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V2-LOOP`, [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **Static resolution & binding rules (`crates/wolio-resolver`):**
+- **Static resolution & binding rules (`crates/wolio-semantic::resolver`):**
   - Neither `item` nor `acc` may be `"result"` or shadow any visible parameter, outer `let` binding, or outer loop variable (`WOLIO-RESOLVE-001`), and `item != acc` (`WOLIO-RESOLVE-001`).
   - Scope of `acc`: visible inside `invariant`, loop `let` statements, and loop trailing body expression; **not** visible inside `iter_source`, `acc_init`, or `bound`.
   - Scope of `item`: visible inside loop `let` statements and loop trailing body expression; **not** visible inside `iter_source`, `acc_init`, `bound`, or `invariant` (since `invariant` is also evaluated on entry before iteration `0` and on exit after the final iteration).
-- **Static type & contract rules (`crates/wolio-types`, `crates/wolio-contracts`):**
+- **Static type & contract rules (`crates/wolio-semantic::types`, `crates/wolio-semantic::contracts`):**
   - `iter_source`: either `start..end` where both `start` and `end` have type `Int` (producing `item: Int`), or an expression of type `List<T>` (producing `item: T`, connected in `T207`). Any other `iter_source` type fails with `WOLIO-TYPE-001`.
   - `acc_init` and the loop body's final expression must both have type `acc_type` (`WOLIO-TYPE-001`).
   - `bound` and `invariant` must have type `Bool` and obey contract purity rules: no `operation` calls (`WOLIO-CONTRACT-001`).

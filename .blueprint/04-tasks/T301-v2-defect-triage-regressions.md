@@ -45,7 +45,7 @@ In scope:
 Out of scope (owner):
 - Copy-on-Write (CoW) reference-counting optimization for `List<T>` and `Map<K, V>` (T302).
 - `[language] version = "3"` manifest gating and large-workspace LSP profiling (T303).
-- Any V3 `std::*`, `Secret<T>`, capability I/O, `resource`/`transaction`, or `property` fuzzing features (T304–T315).
+- Any V3 `std::*`, `Secret<T>`, capability I/O, `resource`/`transaction`, FFI, or `property` fuzzing features (T304–T319).
 
 ## Normative requirements
 - `M12` is a mandatory stabilization gate before `M13`: no V3 standard library or language construct may be implemented until all open V2 P0/P1 defects are reproduced in `tests/conformance/regressions/BUG-nnnn/` and fixed (BASELINE-V3, DELIVERY_POLICY, EXTENSION_BOUNDARIES).

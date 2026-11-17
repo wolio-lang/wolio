@@ -8,7 +8,7 @@
 | Depends on | T004 |
 | Blocks | T021 |
 | Acceptance families | SEM (resolution, visibility, cycles) |
-| Bounded areas | `crates/wolio-resolver`, semantic support |
+| Bounded areas | `crates/wolio-semantic` (resolver submodule), semantic support |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T020.md` |
 
@@ -23,7 +23,7 @@ and the V1 import/call cycle bans with `WOLIO-RESOLVE-001` diagnostics.
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `SEM`, [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **Crate:** `crates/wolio-resolver` (depends on `wolio-ast`, `wolio-diagnostics`).
+- **Crate:** `crates/wolio-semantic` (submodule `resolver`, depends on `wolio-parser`, `wolio-ast`, `wolio-diagnostics`).
 - **Diagnostic code:** All resolution, duplicate, visibility, shadowing, missing/duplicate implementation, import cycle, and recursive call cycle violations emit `WOLIO-RESOLVE-001`.
 - **Reserved builtins & binding names (`WOLIO-RESOLVE-001` if redeclared or shadowed):** `Bool`, `Int`, `String`, `Unit`, `Option`, `Result`, `None`, `Some`, `Ok`, `Err`, `unit`, `console`, `result`.
 

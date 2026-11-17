@@ -8,7 +8,7 @@
 | Depends on | T208 |
 | Blocks | T210 |
 | Acceptance families | V2-PRED |
-| Bounded areas | `crates/wolio-resolver`, `crates/wolio-semantic`, `crates/wolio-types`, `crates/wolio-contracts`, `crates/wolio-runtime` |
+| Bounded areas | `crates/wolio-semantic` (submodules `resolver`, `types`, `graph`, `contracts`), `crates/wolio-runtime` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T209.md` |
 
@@ -24,12 +24,12 @@ bodies while keeping `operation` calls forbidden in contracts.
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V2-PRED`, [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **Identity & Semantic Graph (`crates/wolio-semantic`):**
+- **Identity & Semantic Graph (`crates/wolio-semantic::graph`):**
   - Declaration ID hash domain: `"wolio.symbol.v1"`, `declaration_kind = "predicate"`, `symbol_path = predicate_name`.
   - Unlike `operation`, a `predicate` has no separate `implementation` block (`WOLIO-RESOLVE-001` if an `implementation` block targets a `predicate` name).
   - Semantic graph edges: `calls_predicate` (from contract clause or caller `predicate` to callee `predicate`), `uses_type` (for parameter types).
   - Impact analysis (`wolio impact`) traverses reverse `calls_predicate` edges so changing a public or private `predicate` reports all affected operations, contracts, and tests.
-- **Resolution & Purity Rules (`crates/wolio-resolver`, `crates/wolio-contracts`):**
+- **Resolution & Purity Rules (`crates/wolio-semantic::resolver`, `crates/wolio-semantic::contracts`):**
   - `predicate` declarations obey module visibility (`pub predicate` is importable across modules via `module::PredName`; private `predicate` is module-local; violations emit `WOLIO-RESOLVE-001`).
   - Parameter names may not be `"result"` or shadow visible bindings (`WOLIO-RESOLVE-001`).
   - Return type must be `Bool` (`WOLIO-TYPE-001` if any other return type is written, or `WOLIO-SYNTAX-001` at parse time).

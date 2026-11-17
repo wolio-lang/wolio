@@ -19,10 +19,10 @@ To guarantee zero source collisions across V1, V2 (`CORE_V2.md`), and V3
    `match`, `true`, `false`.
 2. **V1 reserved builtins & bindings (13):** `Bool`, `Int`, `String`, `Unit`,
    `Option`, `Result`, `None`, `Some`, `Ok`, `Err`, `unit`, `console`, `result`.
-3. **V2 & V3 forward-reserved keywords (19):** `in`, `with`, `bound`,
-   `invariant`, `predicate`, `List`, `Map`, `Decimal`, `UInt`, `Bytes`,
+3. **V2 & V3 forward-reserved keywords (24):** `in`, `with`, `bound`,
+   `invariant`, `predicate`, `List`, `Map`, `Set`, `Decimal`, `UInt`, `Bytes`,
    `format`, `secret`, `Secret`, `resource`, `transaction`, `modifies`, `old`,
-   `property`, `std`.
+   `property`, `std`, `with_mock`, `where`, `fn`, `foreign`.
 
 Using any keyword in (1) or (3) as an identifier produces `WOLIO-SYNTAX-001`.
 Redeclaring any builtin in (2) or binding `result` produces `WOLIO-RESOLVE-001`.
@@ -51,7 +51,9 @@ clause = ( "requires" | "ensures" ), expr, ";"
        | "intent", string, ";" ;
 names = name, { ",", name } ;
 implementation = "implementation", ident, block ;
-block = "{", { "let", ident, "=", expr, ";" }, expr, "}" ;
+block = "{", { statement }, expr, "}" ;
+statement = "let", ident, "=", expr, ";"
+          | expr, ";" ;
 test = "test", ident, "for", name, block ;
 expr = unary, { binary_op, unary } ;
 unary = [ "!" | "-" ], primary, { ".", ident } ;
@@ -99,9 +101,27 @@ if conditions and match subjects disambiguate record construction from blocks.
   (deterministic `format(...)` and `Decimal` are introduced in `CORE_V2.md`).
 - Let bindings are immutable and cannot shadow within an operation. A block's
   final expression is its result. Branch results must have the same type.
+- Statements in a block are either `let` bindings or statement expressions (`expr;`).
+  A statement expression `expr;` is permitted ONLY if `expr` statically has type
+  `Unit` (e.g. `console::print(...)`). Discarding any non-`Unit` expression without
+  explicit handling or binding is an error (`WOLIO-TYPE-001` / `WOLIO-LINT-006`).
 - Match is permitted on enums, Option, Result, and Bool; one arm per constructor,
   no wildcards/guards, missing and duplicate cases are errors. Payload bindings
   exist only within their arm. Ignoring a Result-valued let binding is an error.
+
+## Zero-Unsafe Invariant
+
+Wolio is engineered with a strict **Zero-Unsafe Invariant**. Unlike C, C++, or Rust:
+- **NO `unsafe` keyword or syntax exists in the language.**
+- **NO raw pointers, manual memory allocation/deallocation, or address manipulation.**
+- **NO unchecked type casting, union reinterpretation, or transmute.**
+- **NO inline assembly or raw hardware intrinsics.**
+- **NO in-source suppression directives:** Attributes or comments requesting compiler
+  silence, rule disabling, or verification bypass are fatal errors (`WOLIO-ANALYZER-001`).
+All memory management is guaranteed safe by construction through immutable value
+semantics, reference counting with copy-on-write, and scope-bound linear resource
+handles. External interfaces (in V3) are strictly capability-gated, opaque handle-based,
+marshalled through compiler-generated C glue, and isolated behind mandatory sandboxed mocks in tests.
 
 ## Modules, calls, and execution
 

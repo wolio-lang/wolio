@@ -8,7 +8,7 @@
 | Depends on | T306 |
 | Blocks | T308 (M14 entry) |
 | Acceptance families | V3-STD, V3-SECRET; completes M13 |
-| Bounded areas | `crates/wolio-resolver`, `crates/wolio-types`, `crates/wolio-effects`, `crates/wolio-runtime`, `crates/wolio-codegen` |
+| Bounded areas | `crates/wolio-semantic` (submodules `resolver`, `types`, `effects`), `crates/wolio-runtime`, `crates/wolio-codegen` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T307.md` |
 
@@ -23,7 +23,7 @@ milestone M13 (`V3-STD` and `V3-SECRET`).
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V3-STD` and `V3-SECRET`, M13 row of [DELIVERY_PLAN.md](../06-project-management/DELIVERY_PLAN.md), [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **`std::crypto` operations (`crates/wolio-types`, `crates/wolio-effects`, `crates/wolio-runtime`):**
+- **`std::crypto` operations (`crates/wolio-semantic::types`, `crates/wolio-semantic::effects`, `crates/wolio-runtime`):**
   1. `std::crypto::sha256(data: Bytes) -> Bytes`:
      - Pure (`effects []`).
      - Computes FIPS 180-4 SHA-256 digest and returns a 32-byte `Bytes` value (`Bytes::len(result) == 32`).

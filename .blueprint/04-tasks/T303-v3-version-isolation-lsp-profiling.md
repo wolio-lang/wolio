@@ -36,25 +36,25 @@ reject all V3 constructs with `WOLIO-FEATURE-001` and preserve bit-identical
   ```
 - **Manifest version rules (`wolio.toml`):**
   - `[language] version = "1"` -> `LanguageVersion::V1` (rejects V2 and V3 constructs with `WOLIO-FEATURE-001`).
-  - `[language] version = "2"` -> `LanguageVersion::V2` (enables `CORE_V2`, rejects V3 constructs `std::*`, `Secret<T>`, `resource`, `modifies`, `old`, `transaction`, `property`, `with_mock` with `WOLIO-FEATURE-001`).
+  - `[language] version = "2"` -> `LanguageVersion::V2` (enables `CORE_V2`, rejects V3 constructs `std::*`, `Secret<T>`, `resource`, `foreign`, fixed-width integers, `modifies`, `old`, `transaction`, `property`, `with_mock` with `WOLIO-FEATURE-001`).
   - `[language] version = "3"` -> `LanguageVersion::V3` (enables `CORE_V1` + `CORE_V2` + `CORE_V3`).
   - Any other version string (e.g., `"4"`, `"0"`) fails with `WOLIO-FEATURE-001` (exit code `1`).
 - **Central V3 diagnostic registration (`crates/wolio-diagnostics`):**
-  - Register `WOLIO-SECURITY-001`, `WOLIO-EFFECT-002`, `WOLIO-RESOURCE-001`, and `WOLIO-FUZZ-001` in the diagnostic registry (`EVIDENCE_MODEL.md`).
+  - Register `WOLIO-SECURITY-001`, `WOLIO-EFFECT-002`, `WOLIO-RESOURCE-001`, `WOLIO-FOREIGN-001`, `WOLIO-FOREIGN-002`, and `WOLIO-FUZZ-001` in the diagnostic registry (`EVIDENCE_MODEL.md`).
 - **Incremental 100-module LSP & formatter profiling (`crates/wolio-semantic`, `crates/wolio-lsp`):**
   - Cache parsed ASTs and per-module symbol tables keyed by content SHA-256 so an incremental edit to 1 buffer in a 100-module synthetic V2 workspace only re-parses the edited buffer and re-checks its reverse transitive dependents, keeping incremental `textDocument/didChange` -> diagnostic publication latency `< 50 ms` and bounded memory usage (`< 256 MB` RSS).
 
 ## Scope
 In scope:
-- Extending `LanguageVersion` with `V3` and wiring `[language] version = "1" | "2" | "3"` across `wolio-cli`, `wolio-parser`, `wolio-semantic`, `wolio-types`, and `wolio-verify`.
-- Registering V3 diagnostic codes (`WOLIO-SECURITY-001`, `WOLIO-EFFECT-002`, `WOLIO-RESOURCE-001`, `WOLIO-FUZZ-001`) in `wolio-diagnostics`.
+- Extending `LanguageVersion` with `V3` and wiring `[language] version = "1" | "2" | "3"` across `wolio-cli`, `wolio-parser`, `wolio-semantic`, and `wolio-verify`.
+- Registering V3 diagnostic codes (`WOLIO-SECURITY-001`, `WOLIO-EFFECT-002`, `WOLIO-RESOURCE-001`, `WOLIO-FOREIGN-001`, `WOLIO-FOREIGN-002`, `WOLIO-FUZZ-001`) in `wolio-diagnostics`.
 - Per-module content-addressed AST/symbol caching in `wolio-lsp` / `wolio-semantic` and automated benchmark test over a 100-module synthetic workspace.
 
 Out of scope (owner):
-- Implementing `std::*` modules (T304, T305, T307, T308), `Secret<T>` (T306), `with_mock` (T309), `resource`/`transaction` (T310, T311), and `property` fuzzing (T312).
+- Implementing `std::*` modules (T304, T305, T307, T308), `Secret<T>` (T306), `with_mock` (T309), `resource`/`transaction` (T310, T311), FFI & fixed-width integers (T316–T319), and `property` fuzzing (T312).
 
 ## Normative requirements
-- Using any V3 construct (`import std::*`, `Secret<T>`, `resource`, `modifies`, `old`, `transaction`, `property`, `with_mock`) in a project declaring `[language] version = "1"` or `"2"` must fail deterministically with `WOLIO-FEATURE-001` (CORE_V3, EXTENSION_BOUNDARIES).
+- Using any V3 construct (`import std::*`, `Secret<T>`, `resource`, `foreign`, fixed-width integers, `modifies`, `old`, `transaction`, `property`, `with_mock`) in a project declaring `[language] version = "1"` or `"2"` must fail deterministically with `WOLIO-FEATURE-001` (CORE_V3, EXTENSION_BOUNDARIES).
 - Upgrading the compiler binary to V3 must keep `sym_` declaration IDs, clause hashes, and snapshot hashes bit-identical for all existing V1 (`version = "1"`) and V2 (`version = "2"`) projects (DELIVERY_POLICY).
 - Incremental LSP updates on a 100-module V2 workspace must only recompute affected modules and preserve unsaved in-memory buffer isolation (V3-TASKS, DELIVERY_POLICY).
 

@@ -28,14 +28,14 @@ In scope:
 - Request envelope validation (`protocol_version: 1`, `request_id`, `method`,
   `base_snapshot`, `params`) and 1 MiB line limit.
 - Snapshot-checked `inspect`, `impact` and `verify` protocol methods reusing
-  M03 services.
+  M03 services, plus Context Spine query (`inspect` with `kind: "context_spine"`).
 - Append-only `.wolio-log/` request/response ledger and `request_id` replay/
   conflict detection.
 
 Out of scope (owner):
 - `plan` payload validation, AST rendering and canonical diffs (T041); scope and
   approval tier enforcement (T042); staged `apply` and crash recovery (T043);
-  `finalize`, bounded repair and review ledger (T044).
+  `finalize`, MCTS state rollback repair and review ledger (T044).
 
 ## Normative requirements
 - Transport is local UTF-8 JSON-lines over stdin/stdout under the invoking OS
@@ -59,7 +59,7 @@ Out of scope (owner):
 
 ## Acceptance criteria
 Positive and boundary:
-- [ ] Valid `inspect`, `impact` and `verify` requests over JSONL return deterministic results matching CLI services
+- [ ] Valid `inspect`, `impact`, `verify`, and Context Spine (`inspect` with `kind: "context_spine"`) requests over JSONL return deterministic results matching CLI services
 - [ ] Repeated `request_id` with identical payload replays the recorded response from `.wolio-log/`
 - [ ] `.wolio-log/` entries do not alter the project source snapshot hash
 

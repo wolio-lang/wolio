@@ -20,27 +20,33 @@ parity against the interpreter.
 
 ## Authority
 - Normative: [DELIVERY_POLICY.md](../03-implementation/DELIVERY_POLICY.md) (Section 2: Interpreter-first and verified native lowering), [CORE_V2.md](../02-specifications/language/CORE_V2.md), [EVIDENCE_MODEL.md](../02-specifications/verification/EVIDENCE_MODEL.md)
+- Decision: [ADR-009](../01-architecture/decisions/ADR-009-unconventional-paradigm-unification.md)
 - Implementation layout: [IMPLEMENTATION_SPECIFICATION_V2.md](../03-implementation/IMPLEMENTATION_SPECIFICATION_V2.md) (Section 2 & Section 3)
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V2-NATIVE` and `NATIVE`, [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
 - **Typed IR extensions (`crates/wolio-ir`):**
-  - Add IR types: `IrType::UInt64`, `IrType::Decimal128` (`i128`), `IrType::BytesPtr`, `IrType::ListPtr(Box<IrType>)`, `IrType::MapPtr(Box<IrType>, Box<IrType>)`.
+  - Add IR types: `IrType::UInt64`, `IrType::Decimal128` (`i128`), `IrType::BytesPtr`, `IrType::ListPtr(Box<IrType>)`, `IrType::MapPtr(Box<IrType>, Box<IrType>)`, `IrType::SetPtr(Box<IrType>)`.
   - Add structured bounded loop IR construct:
     - `LoopRegion { source_len, bound_block, entry_invariant_block, header_block, body_block, step_invariant_block, exit_invariant_block, after_block }`.
     - The structural verifier (`wolio_ir::verify_ir`) rejects any loop region missing its `BoundGuard` (`WOLIO-CONTRACT-005`), entry/step/exit `InvariantGuard` (`WOLIO-CONTRACT-006`), or monotonic index increment `idx_next = idx + 1` bounded by `source_len`. Unstructured backward jumps remain rejected.
+  - Lower checked bitwise instructions (`BitAnd`, `BitOr`, `BitXor`, `BitNot`, `BitShl`, `BitShr`) with mandatory runtime check `0 <= n < 64` (faulting with `WOLIO-RUNTIME-001` if invalid).
   - Lower `predicate` declarations as pure IR functions callable from contract guard blocks and other predicates.
 - **Runtime C ABI additions (`crates/wolio-runtime`):**
   - `wolio_rt_decimal_mul(a_lo: u64, a_hi: i64, b_lo: u64, b_hi: i64, ctx: *const FaultCtx) -> i128`
   - `wolio_rt_decimal_div(a_lo: u64, a_hi: i64, b_lo: u64, b_hi: i64, ctx: *const FaultCtx) -> i128`
+  - `wolio_rt_decimal_mul_round(a_lo: u64, a_hi: i64, b_lo: u64, b_hi: i64, mode: u8, ctx: *const FaultCtx) -> i128`
+  - `wolio_rt_decimal_div_round(a_lo: u64, a_hi: i64, b_lo: u64, b_hi: i64, mode: u8, ctx: *const FaultCtx) -> i128`
   - `wolio_rt_bytes_empty()`, `wolio_rt_bytes_from_utf8(...)`, `wolio_rt_bytes_len(...)`, `wolio_rt_bytes_eq(...)`
   - `wolio_rt_list_empty()`, `wolio_rt_list_push(...)`, `wolio_rt_list_len(...)`, `wolio_rt_list_get(...)`, `wolio_rt_list_eq(...)`
   - `wolio_rt_map_empty()`, `wolio_rt_map_insert(...)`, `wolio_rt_map_get(...)`, `wolio_rt_map_remove(...)`, `wolio_rt_map_len(...)`, `wolio_rt_map_keys(...)`, `wolio_rt_map_eq(...)`
+  - `wolio_rt_set_empty()`, `wolio_rt_set_insert(...)`, `wolio_rt_set_contains(...)`, `wolio_rt_set_remove(...)`, `wolio_rt_set_len(...)`, `wolio_rt_set_items(...)`, `wolio_rt_set_eq(...)`
   - `wolio_rt_format(...)`
   - `wolio_rt_contract_fail_bound(ctx: *const ContractFaultCtx) -> !` (emits `WOLIO-CONTRACT-005`)
   - `wolio_rt_contract_fail_invariant(ctx: *const ContractFaultCtx) -> !` (emits `WOLIO-CONTRACT-006`)
 - **LLVM Codegen (`crates/wolio-codegen`):**
-  - Lower checked `UInt64` and `Decimal128` (`i128` add/sub overflow intrinsics + C ABI mul/div calls), bounded loop basic blocks with phi nodes for `(idx, acc)`, `predicate` calls, and reference-counted `List`/`Map`/`Bytes`/`format` calls.
+  - Pure Rust textual LLVM IR (`.ll`) emission and hermetic compilation via pinned `clang` toolchain (zero Cargo `llvm-sys` / `inkwell` C++ build risk).
+  - Lower checked `UInt64`, bitwise operations, and `Decimal128` (`i128` add/sub overflow intrinsics + C ABI mul/div/round calls), bounded loop basic blocks with phi nodes for `(idx, acc)`, `predicate` calls, and reference-counted `List`/`Map`/`Set`/`Bytes`/`format` calls.
   - Keep all `bound`, `invariant`, `requires`, `ensures`, and arithmetic guards active in release builds (`wolio build`).
 
 ## Scope

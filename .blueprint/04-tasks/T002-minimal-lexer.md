@@ -24,7 +24,7 @@ keywords with deterministic zero-based UTF-8 byte spans and structured errors.
 ## Self-contained implementation context
 - **Punctuation & operators:** `;`, `,`, `:`, `::`, `.`, `(`, `)`, `{`, `}`, `[`, `]`, `->`, `=>`, `=`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `+`, `-`, `*`, `/`, `%`, `!`, `&&`, `||`.
 - **V1 active keywords (22):** `module`, `import`, `pub`, `type`, `record`, `enum`, `operation`, `requires`, `ensures`, `effects`, `dependencies`, `errors`, `intent`, `implementation`, `test`, `for`, `let`, `if`, `else`, `match`, `true`, `false`.
-- **V2 & V3 forward-reserved keywords (19):** `in`, `with`, `bound`, `invariant`, `predicate`, `List`, `Map`, `Decimal`, `UInt`, `Bytes`, `format`, `secret`, `Secret`, `resource`, `transaction`, `modifies`, `old`, `property`, `std`. (Tokenize as reserved keywords so parser/binder rejects their use as identifiers in V1 with `WOLIO-SYNTAX-001`.)
+- **V2 & V3 forward-reserved keywords (24):** `in`, `with`, `bound`, `invariant`, `predicate`, `List`, `Map`, `Set`, `Decimal`, `UInt`, `Bytes`, `format`, `secret`, `Secret`, `resource`, `transaction`, `modifies`, `old`, `property`, `std`, `with_mock`, `where`, `fn`, `foreign`. (Tokenize as reserved keywords so parser/binder rejects their use as identifiers in V1 with `WOLIO-SYNTAX-001`.)
 - **Literals:**
   - `integer`: ASCII `[0-9]+` (no `_` separators; `-` is a separate unary operator token).
   - `string`: `"..."` with JSON escapes (`\"`, `\\`, `\/`, `\b`, `\f`, `\n`, `\r`, `\t`, `\uXXXX` including valid UTF-16 surrogate pairs decoded to one Unicode scalar; unescaped `U+0000`..`U+001F` and unpaired surrogates fail with `WOLIO-SYNTAX-001`).

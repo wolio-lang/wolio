@@ -8,7 +8,7 @@
 | Depends on | T030 |
 | Blocks | T032 |
 | Acceptance families | EFFECT |
-| Bounded areas | effects (`crates/wolio-effects`), contracts, types |
+| Bounded areas | `crates/wolio-semantic` (effects submodule) |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T031.md` |
 

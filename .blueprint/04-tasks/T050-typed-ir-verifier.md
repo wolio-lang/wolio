@@ -18,7 +18,7 @@ with explicit arithmetic and contract guards, enforced by a structural verifier
 that alone constructs `VerifiedWolioIr`.
 
 ## Authority
-- Normative: [DELIVERY_POLICY.md](../03-implementation/DELIVERY_POLICY.md), [CORE_V1.md](../02-specifications/language/CORE_V1.md), [CONTRACT_DESIGN.md](../02-specifications/CONTRACT_DESIGN.md), [IMPLEMENTATION_SPECIFICATION_V1.md](../03-implementation/IMPLEMENTATION_SPECIFICATION_V1.md)
+- Normative: [DELIVERY_POLICY.md](../03-implementation/DELIVERY_POLICY.md), [CORE_V1.md](../02-specifications/language/CORE_V1.md) (including Zero-Unsafe Invariant), [CONTRACT_DESIGN.md](../02-specifications/CONTRACT_DESIGN.md), [IMPLEMENTATION_SPECIFICATION_V1.md](../03-implementation/IMPLEMENTATION_SPECIFICATION_V1.md)
 - Decision: [ADR-007](../01-architecture/decisions/ADR-007-deterministic-identity-and-gated-automation.md)
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `NATIVE`, [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 - Implementation layout: [IMPLEMENTATION_SPECIFICATION_V1.md](../03-implementation/IMPLEMENTATION_SPECIFICATION_V1.md)
@@ -49,6 +49,9 @@ Out of scope (owner):
   and completed static checks; any IR transformation requires re-verification
   (DELIVERY_POLICY, ADR-007).
 - `wolio-ir` has no dependency on LLVM or `wolio-codegen` (DELIVERY_POLICY).
+- The IR must never contain raw pointer operations, unsafe memory access, or
+  unchecked type casts; the structural verifier rejects any such construct per
+  the Zero-Unsafe Invariant (CORE_V1).
 
 ## Acceptance criteria
 Positive and boundary:
@@ -59,6 +62,7 @@ Positive and boundary:
 Rejection and failure:
 - [ ] Hand-crafted or mutated IR with ill-typed edges, mismatched branch types, bad tags or missing terminators is rejected by the verifier
 - [ ] IR missing required arithmetic or contract guard nodes is rejected
+- [ ] IR containing raw pointer operations, unsafe memory access, or unchecked casts is rejected (Zero-Unsafe Invariant)
 
 Completion:
 - [ ] Common gates in EXECUTION_CONTRACTS pass

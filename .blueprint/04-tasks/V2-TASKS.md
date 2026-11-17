@@ -54,39 +54,40 @@ acceptance of the V2 execution start.
 - **Acceptance families:** `V2-LOOP` (syntax)
 - **Self-contained contract:**
   - Promote reserved V2 tokens (`in`, `with`, `bound`, `invariant`, `predicate`, `List`, `Map`, `Decimal`, `UInt`, `Bytes`, `format`, `..`) to active grammar terminals when `[language] version = "2"`.
-  - Parse `for (item in source with acc: Type = init) { bound expr; invariant expr; lets...; body_expr }` and `predicate Name(fields) -> Bool { expr }` into spanned AST nodes.
+  - Parse `for (item in source with acc: Type = init) { bound expr; invariant expr; lets...; body_expr }`, `predicate Name(fields) -> Bool { expr }`, and turbofish constructor calls (`List::empty::<T>()`, `Map::empty::<K, V>()`) into spanned AST nodes.
   - Reject loops missing either `bound` or `invariant` with `WOLIO-SYNTAX-001`.
 
-### T205: Implement `UInt`, `Bytes`, and exact 128-bit fixed-scale `Decimal`
+### T205: Implement `UInt`, `Bytes`, exact 128-bit fixed-scale `Decimal` with explicit rounding, and checked bitwise operations
 - **Depends on:** `T204` | **Blocks:** `T206`, `T207`, `T208`
-- **Bounded areas:** `crates/wolio-types`, `crates/wolio-runtime`
-- **Acceptance families:** `V2-DATA` (scalars)
+- **Bounded areas:** `crates/wolio-semantic` (submodules `resolver`, `types`), `crates/wolio-runtime`
+- **Acceptance families:** `V2-DATA` (scalars, exact math, bitwise)
 - **Self-contained contract:**
   - Implement 64-bit unsigned `UInt` (checked `+ - * / %`, underflow/overflow faults with `WOLIO-RUNTIME-001`).
   - Implement immutable `Bytes` value representation and structural equality.
-  - Implement exact signed 128-bit fixed-point `Decimal` (scale `10^6`): constructors `Decimal::of(Int)` and `Decimal::from_scaled(Int, Int)`, checked arithmetic, exact comparison, and runtime fault (`WOLIO-RUNTIME-001`) on overflow or division by zero. No binary float (`f32`/`f64`) is used anywhere.
+  - Implement exact signed 128-bit fixed-point `Decimal` (scale `10^6`): constructors `Decimal::of(Int)` and `Decimal::from_scaled(Int, Int)`, checked arithmetic, exact comparison, and runtime fault (`WOLIO-RUNTIME-001`) on overflow or division by zero. Standard `*` and `/` trap if a non-zero fractional remainder remains beyond scale `10^-6`. Explicit `Decimal::mul_round` and `Decimal::div_round` builtins require explicit `RoundingMode` (`HalfEven`, `HalfUp`, `Floor`, `Ceil`, `Truncate`).
+  - Implement checked functional bitwise operations for `Int` and `UInt`: `bit_and`, `bit_or`, `bit_xor`, `bit_not`, `bit_shl`, `bit_shr`. Shift amounts are checked (`0 <= n < 64`) and fault with `WOLIO-RUNTIME-001` if invalid. No binary float (`f32`/`f64`) is used anywhere.
 
 ### T206: Type-check and execute total bounded `for` loops with `bound` and `invariant` guards
 - **Depends on:** `T205` | **Blocks:** `T207`
-- **Bounded areas:** `crates/wolio-types`, `crates/wolio-contracts`, `crates/wolio-runtime`
+- **Bounded areas:** `crates/wolio-semantic` (submodules `resolver`, `types`, `contracts`), `crates/wolio-verify`, `crates/wolio-runtime`
 - **Acceptance families:** `V2-LOOP`
 - **Self-contained contract:**
   - Enforce that `bound` and `invariant` expressions have type `Bool` and contain no operation calls (`WOLIO-CONTRACT-001`).
   - Enforce that `item` and `acc` do not shadow visible bindings (`WOLIO-RESOLVE-001`) and the loop body type matches the declared accumulator type (`WOLIO-TYPE-001`).
   - At runtime: evaluate `bound` once before entry (aborting with `WOLIO-CONTRACT-005` if `false`); evaluate `invariant` on entry (`acc = init`), after each iteration (`acc = next_acc`), and on exit (aborting with `WOLIO-CONTRACT-006` if `false`).
 
-### T207: Implement immutable `List<T>` and canonical-order `Map<K, V>`
+### T207: Implement immutable `List<T>`, canonical-order `Map<K, V>`, and canonical `Set<T>`
 - **Depends on:** `T206` | **Blocks:** `T208`
-- **Bounded areas:** `crates/wolio-types`, `crates/wolio-runtime`
+- **Bounded areas:** `crates/wolio-semantic` (submodules `resolver`, `types`), `crates/wolio-runtime`
 - **Acceptance families:** `V2-DATA` (collections)
 - **Self-contained contract:**
-  - Type-check `List<T>` and `Map<K, V>` (`K` restricted to `Int`, `UInt`, `String`, `Bool`, or nominal types over them; other key types fail with `WOLIO-TYPE-001`).
-  - Implement pure value-semantic operations: `List::empty`, `List::push`, `List::len`, `List::get` (returning `Option<T>`), and `Map::empty`, `Map::insert`, `Map::get`, `Map::remove`, `Map::len`, `Map::keys` (sorted in canonical key order).
-  - Support `for (item in list_expr with acc: T = init)` iteration over `List<T>`.
+  - Type-check `List<T>`, `Map<K, V>`, and `Set<T>` (`K` and `T` for sets restricted to `Int`, `UInt`, `String`, `Bool`, or nominal types over them; other key/element types fail with `WOLIO-TYPE-001`).
+  - Implement pure value-semantic operations with turbofish constructors: `List::empty::<T>()`, `List::push::<T>`, `List::len::<T>`, `List::get::<T>` (returning `Option<T>`), `Map::empty::<K, V>()`, `Map::insert::<K, V>`, `Map::get::<K, V>`, `Map::remove::<K, V>`, `Map::len::<K, V>`, `Map::keys::<K, V>` (sorted in canonical key order), and `Set::empty::<T>()`, `Set::insert::<T>`, `Set::contains::<T>`, `Set::remove::<T>`, `Set::len::<T>`, `Set::items::<T>` (sorted in canonical item order per ADR-009).
+  - Support `for (item in iter_expr with acc: T = init)` iteration over `List<T>`, `Set<T>`, and `Map::keys(...)`.
 
 ### T208: Implement type-checked deterministic `format(template, ...)`
 - **Depends on:** `T207` | **Blocks:** `T209`
-- **Bounded areas:** `crates/wolio-types`, `crates/wolio-runtime`
+- **Bounded areas:** `crates/wolio-semantic` (submodules `types`, `contracts`), `crates/wolio-runtime`
 - **Acceptance families:** `V2-DATA` (`format`)
 - **Self-contained contract:**
   - Validate at compile time that the first argument to `format(...)` is a string literal whose `{}` placeholder count equals the remaining argument count (`WOLIO-TYPE-001`).
@@ -98,7 +99,7 @@ acceptance of the V2 execution start.
 
 ### T209: Implement reusable pure `predicate` declarations and contract calls
 - **Depends on:** `T208` | **Blocks:** `T210`
-- **Bounded areas:** `crates/wolio-resolver`, `crates/wolio-semantic`, `crates/wolio-contracts`, `crates/wolio-runtime`
+- **Bounded areas:** `crates/wolio-semantic` (submodules `resolver`, `types`, `graph`, `contracts`), `crates/wolio-runtime`
 - **Acceptance families:** `V2-PRED`
 - **Self-contained contract:**
   - Assign deterministic `sym_` IDs with kind `"predicate"` (`wolio.symbol.v1`).
@@ -107,7 +108,7 @@ acceptance of the V2 execution start.
 
 ### T210: Enforce `[architecture]` module dependency allow/deny rules (`WOLIO-ARCH-001`)
 - **Depends on:** `T209` | **Blocks:** `T211`
-- **Bounded areas:** `crates/wolio-effects`, `crates/wolio-semantic`
+- **Bounded areas:** `crates/wolio-semantic` (submodules `effects`, `graph`), `crates/wolio-verify`
 - **Acceptance families:** `V2-ARCH`
 - **Self-contained contract:**
   - Parse `[architecture]` `allow_imports` and `deny_imports` rules in `wolio.toml` and include them in the project policy snapshot hash.
@@ -119,12 +120,12 @@ acceptance of the V2 execution start.
 - **Acceptance families:** `V2-AGENT`
 - **Self-contained contract:**
   - Support `protocol_version: 2` alongside `protocol_version: 1`.
-  - Add typed AST payloads for `for` loops, `predicate` declarations, `List`/`Map`/`Decimal`/`UInt`/`Bytes`, and `format`.
+  - Add canonical Wolio code snippet strings (`code: string`) parsed server-side into verified AST diffs, and typed AST payloads for `for` loops, `predicate` declarations, `List`/`Map`/`Decimal`/`UInt`/`Bytes`, and `format`.
   - Add `create_module`, `delete_module`, `add_import`, and `remove_import` plan operations, computing `POST_REVIEW` or `HUMAN_REQUIRED` tiers according to public visibility and `[architecture]` policy.
 
-### T212: Extend anti-workaround analyzer for V2 loops and predicates
+### T212: Extend anti-workaround analyzer for V2 loops, predicates and constants
 - **Depends on:** `T211` | **Blocks:** `T213`
-- **Bounded areas:** `crates/wolio-analyzer`
+- **Bounded areas:** `crates/wolio-semantic` (submodule `analyzer`), `crates/wolio-verify`
 - **Acceptance families:** `V2-AGENT`, `ANALYZER`
 - **Self-contained contract:**
   - Reject tautological loop invariants (`invariant true;`) in production implementations with `WOLIO-ANALYZER-001` (treating `invariant true;` as a verification bypass).
@@ -134,12 +135,13 @@ acceptance of the V2 execution start.
 
 ## M11 — V2 Native Parity, Tooling & Algorithmic Benchmark (`T213`–`T216`)
 
-### T213: Lower V2 bounded loops, collections, predicates, and `Decimal` to `VerifiedWolioIr` and LLVM
+### T213: Lower V2 bounded loops, collections, predicates, bitwise, and `Decimal` to `VerifiedWolioIr` and LLVM
 - **Depends on:** `T212` | **Blocks:** `T214`
 - **Bounded areas:** `crates/wolio-ir`, `crates/wolio-codegen`, `crates/wolio-runtime`
 - **Acceptance families:** `V2-NATIVE`
 - **Self-contained contract:**
-  - Extend `VerifiedWolioIr` with verified bounded loop headers, `bound`/`invariant` guard blocks (`WOLIO-CONTRACT-005`/`006`), 128-bit `Decimal` ops, and reference-counted `List`/`Map` runtime ABI calls.
+  - Extend `VerifiedWolioIr` with verified bounded loop headers, `bound`/`invariant` guard blocks (`WOLIO-CONTRACT-005`/`006`), 128-bit `Decimal` ops with rounding modes, checked bitwise ops, and reference-counted `List`/`Map` runtime ABI calls.
+  - Emit verified textual LLVM IR (`.ll`) and invoke pinned `clang` toolchain (pure Rust codegen, zero `llvm-sys` / `inkwell` C++ build risk).
   - Prove 100% differential parity between the interpreter and release-optimized native builds across all `V2-*` conformance fixtures.
 
 ### T214: Update `wolio fmt` and `wolio lsp` for all `CORE_V2` constructs

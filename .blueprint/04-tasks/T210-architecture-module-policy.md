@@ -8,7 +8,7 @@
 | Depends on | T209 |
 | Blocks | T211 |
 | Acceptance families | V2-ARCH |
-| Bounded areas | `crates/wolio-effects`, `crates/wolio-semantic`, `crates/wolio-verify` |
+| Bounded areas | `crates/wolio-semantic` (submodules `effects`, `graph`), `crates/wolio-verify` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T210.md` |
 
@@ -24,7 +24,7 @@ introduces a forbidden cross-layer dependency (Taxonomy `W04`).
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V2-ARCH`, [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **`wolio.toml` `[architecture]` schema (`crates/wolio-semantic`, `crates/wolio-effects`):**
+- **`wolio.toml` `[architecture]` schema (`crates/wolio-semantic::effects`):**
   ```toml
   [architecture]
   allow_imports = [

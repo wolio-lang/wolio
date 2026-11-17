@@ -34,7 +34,7 @@ In scope:
   preserving concurrent user edits.
 
 Out of scope (owner):
-- Bounded repair loop, owner review disposition (`accepted`/`rejected`),
+- MCTS state rollback repair, owner review disposition (`accepted`/`rejected`),
   `finalize` and M04 analyzer rules (T044).
 
 ## Normative requirements

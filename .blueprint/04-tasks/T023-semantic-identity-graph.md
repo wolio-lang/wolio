@@ -8,7 +8,7 @@
 | Depends on | T022 |
 | Blocks | T024 |
 | Acceptance families | ID |
-| Bounded areas | semantic, CLI (diagnostic targets) |
+| Bounded areas | `crates/wolio-semantic` (graph submodule), CLI (diagnostic targets) |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T023.md` |
 

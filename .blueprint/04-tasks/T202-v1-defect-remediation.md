@@ -24,7 +24,7 @@ conformance suites pass in both interpreter and native builds.
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V2-REGRESSION` and all V1 families (`FRONT`..`TOOL`), [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **Target crates:** All existing V1 crates (`wolio-diagnostics`, `wolio-ast`, `wolio-lexer`, `wolio-parser`, `wolio-resolver`, `wolio-semantic`, `wolio-types`, `wolio-contracts`, `wolio-effects`, `wolio-analyzer`, `wolio-verify`, `wolio-runtime`, `wolio-ir`, `wolio-codegen`, `wolio-agent`, `wolio-package`, `wolio-format`, `wolio-lsp`, `wolio-cli`).
+- **Target crates:** All 14 consolidated V1 crates (`crates/wolio-diagnostics`, `crates/wolio-ast`, `crates/wolio-lexer`, `crates/wolio-parser`, `crates/wolio-semantic` [submodules `resolver`, `types`, `graph`, `contracts`, `effects`, `analyzer`], `crates/wolio-verify`, `crates/wolio-runtime`, `crates/wolio-ir`, `crates/wolio-codegen`, `crates/wolio-agent`, `crates/wolio-package`, `crates/wolio-format`, `crates/wolio-lsp`, `crates/wolio-cli`).
 - **Differential parity rule:** Every `BUG-nnnn` fixture that reaches runtime execution must produce identical stdout, exit code, arithmetic fault (`WOLIO-RUNTIME-001`), and contract violation code/clause (`WOLIO-CONTRACT-002`..`004`) in `wolio run` (interpreter) and `wolio build` (native LLVM binary).
 - **No contract/analyzer weakening:** Fixes must never relax `WOLIO-ANALYZER-001`..`005`, `APPROVAL_MATRIX_V1.md` tier computation, or `VerifiedWolioIr` structural checks.
 

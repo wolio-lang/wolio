@@ -13,9 +13,9 @@
 | Report | `.execution/reports/T062.md` |
 
 ## Objective
-Execute the 24-task × 10-paired-seed benchmark matrix across Wolio, Go, Rust and
-TypeScript in randomized order and archive every raw run record without
-omission.
+Execute the 10-task × 5-paired-seed benchmark matrix across Wolio, Go, Rust and
+TypeScript in randomized order (200 total runs) and archive every raw run record
+without omission.
 
 ## Authority
 - Normative: [DELIVERY_PLAN.md](../06-project-management/DELIVERY_PLAN.md) (Benchmark protocol), [RELEASE_CRITERIA.md](../05-quality/RELEASE_CRITERIA.md) (Evaluation claims), [BASELINE-V1.md](../BASELINE-V1.md)
@@ -24,8 +24,8 @@ omission.
 
 ## Scope
 In scope:
-- Execution of 24 tasks × 10 paired runs per arm (Wolio, Go, Rust, TypeScript;
-  optional native Wolio stratum recorded separately if run).
+- Execution of 10 contract-first tasks × 5 paired runs per arm (Wolio, Go, Rust,
+  TypeScript; 200 total runs; optional native Wolio stratum recorded separately if run).
 - Complete raw JSONL/archive artifacts under `benchmarks/results` containing
   prompts, corpus hashes, model/tool versions, repair transcripts, diagnostics,
   hidden-test verdicts, token counts, wall time, cost and `AI_BUG_TAXONOMY`
@@ -36,7 +36,7 @@ Out of scope (owner):
   final narrative report (T063).
 
 ## Normative requirements
-- Run 24 tasks × 10 paired seeds/runs per arm across Wolio, Go, Rust and
+- Run 10 tasks × 5 paired seeds/runs per arm across Wolio, Go, Rust and
   TypeScript in randomized order under the frozen T060/T061 protocol
   (DELIVERY_PLAN).
 - Every timeout, tool error, repair exhaustion and failed acceptance test counts

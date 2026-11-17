@@ -66,7 +66,7 @@ V3 ships deterministic builtin standard library modules (requiring explicit
   invoked inside tests using a deterministic `with_mock { ... }` handler table;
   unmocked external effects in tests fail with `WOLIO-EFFECT-002`.
 
-## 5. Stateful resource handles and `transaction` blocks
+## 5. Stateful resource handles, instantiation, and `transaction` blocks
 
 ```wol
 operation Transfer(db: resource DbHandle, from: AccountId, to: AccountId, amount: Decimal) -> Result<Unit, TxError> {
@@ -82,17 +82,31 @@ operation Transfer(db: resource DbHandle, from: AccountId, to: AccountId, amount
 }
 ```
 
-- Resource handles (`resource <Type>`) are linear/non-aliasing parameters: passing
-  the same resource handle twice in one call (`f(db, db)`) is rejected statically
-  (`WOLIO-RESOURCE-001`).
-- Operations mutating a resource must declare `modifies [handle];` and effect
-  `Db::Tx` (or resource effect).
-- `old(expr)` in `ensures` captures the entry snapshot of a pure inspector over the
-  declared resource before the body executes.
-- `transaction (handle) { ... }` executes a block against a transactional resource
-  adapter: if the block returns `Result::Err(...)` or faults, the adapter rolls back
-  the resource state to its entry snapshot and verifies the error-branch `ensures`
-  postcondition (`AccountBalance(db, from) == old(...)`).
+- **Scope-bound lexical acquisition (deadlock resolution):**
+  - Resource handles cannot be constructed from raw values or literals in normal code.
+  - In production entrypoints and host adapters, a resource is acquired via explicit scope-bound acquisition:
+    ```wol
+    let db = Resource::acquire::<DbHandle>(config);
+    ```
+    `Resource::acquire::<T>(...)` is permitted only in package `main` or authorized capability adapter operations.
+  - In test fixtures and test blocks, a mock resource handle is instantiated exclusively inside a `with_mock` block:
+    ```wol
+    with_mock {
+        // mock handlers...
+    } in {
+        let mock_db = Resource::mock::<DbHandle>();
+        Transfer(mock_db, from_acc, to_acc, amount)
+    }
+    ```
+- **Strict linearity and non-aliasing rules (`WOLIO-RESOURCE-001`):**
+  - **No aliased rebinding:** `let b2 = b;` is forbidden statically. Moving or rebinding a live resource without consuming or transferring the original identifier fails with `WOLIO-RESOURCE-001`.
+  - **No duplicate argument passing:** Passing the same resource binding in two or more argument positions of a single call (e.g., `f(db, db)`) fails with `WOLIO-RESOURCE-001`.
+  - **No escaping or embedding:** A resource handle cannot be stored in fields of a `record`, `enum` payload, `Option`, `Result`, `List`, or `Map` (`WOLIO-RESOURCE-001`).
+  - **No escaping returns:** Returning a resource handle from an operation without explicit linear transfer capability fails with `WOLIO-RESOURCE-001`.
+- **Frame conditions and snapshots:**
+  - Operations mutating a resource must declare `modifies [handle];` and effect `Db::Tx` (or resource effect). Mutating without `modifies [handle];` fails with `WOLIO-RESOURCE-001`.
+  - `old(expr)` in `ensures` captures the entry snapshot of a pure inspector over the declared resource before the body executes.
+  - `transaction (handle) { ... }` executes a block against a transactional resource adapter: if the block returns `Result::Err(...)` or faults, the adapter rolls back the resource state to its entry snapshot and verifies the error-branch `ensures` postcondition (`AccountBalance(db, from) == old(...)`).
 
 ## 6. Contract-driven property fuzzing (`property` and `wolio verify --fuzz`)
 
@@ -111,4 +125,85 @@ property clamp_postcondition for Clamp(x: Int) {
 - This defeats AI test-hardcoding: an implementation that only handles the 2–3
   literal values present in `test` blocks will fail generated boundary/fuzz inputs
   with `WOLIO-CONTRACT-003` and a minimal shrinking counterexample.
+
+## 7. Foreign Function Interface (Capability-Gated Boundary)
+
+Wolio provides a capability-gated Foreign Function Interface (FFI) designed specifically for safe systems programming and AI vibe coding: AI agents and application developers are strictly prevented from authoring raw pointers, manual memory allocators, or unverified `unsafe` blocks.
+
+```wol
+pub foreign type DeviceHandle from "libhardware";
+
+pub foreign operation ReadRegister(
+    dev: DeviceHandle,
+    offset: UInt16
+) -> Result<UInt8, ForeignError> from "libhardware" {
+    requires offset < 1024;
+    ensures match (result) {
+        Result::Ok(val) => val <= 255,
+        Result::Err(_) => true
+    };
+    effects [Foreign::Call];
+    errors [ForeignError::NullPointer, ForeignError::IoFailure, ForeignError::InvalidResponse];
+}
+```
+
+- **Linear, opaque foreign types (`foreign type`):**
+  - Declared as `foreign type <Type> from "<library>";`.
+  - Opaque: internal memory layout and pointers cannot be accessed or inspected in Wolio code.
+  - Linear: cannot be duplicated, copied, or aliased.
+  - **Storage restriction (`WOLIO-FOREIGN-002`):** A foreign type is strictly forbidden from being stored in fields of ordinary `record` types, `enum` payloads, `List`, `Map`, `Option`, or `Result`.
+  - **Scope-bound auto-drop:** A foreign type binding automatically invokes compiler-generated destructor glue (e.g., `<library>_<type>_drop(handle)`) at the end of its enclosing lexical scope, guaranteeing zero resource or memory leaks.
+- **Contract-guarded foreign operations (`foreign operation`):**
+  - Declared with pre-conditions (`requires`), post-conditions (`ensures`), effects (`effects [Foreign::Call]`), and typed errors (`errors [...]`).
+  - Compiler generates deterministic C glue code. The C glue validates `requires` pre-conditions before crossing the C ABI boundary, translates parameters, calls the foreign function, marshals C return codes into `Result<T, ForeignError>`, and verifies `ensures` postconditions upon return.
+  - Developers and AI agents never write C headers, pointer casts, or `unsafe` blocks.
+- **Capability gating via `wolio.toml` (`WOLIO-FOREIGN-001`):**
+  - Every external library referenced in `from "<library>"` must be explicitly registered in `wolio.toml`:
+    ```toml
+    [foreign]
+    allowed_libraries = ["libhardware", "libsqlite3"]
+    ```
+  - Attempting to declare or import a `foreign type` or `foreign operation` from an unlisted library produces compile-time diagnostic `WOLIO-FOREIGN-001`.
+  - Any edit to `[foreign].allowed_libraries` in `wolio.toml` is classified as `HUMAN_REQUIRED` in the agent protocol and approval matrix (`APPROVAL_MATRIX_V1.md`).
+- **Mandatory `Foreign::Call` effect and hermetic test mocking (`WOLIO-EFFECT-002`):**
+  - Any operation invoking a foreign operation must declare `effects [Foreign::Call]` in its contract.
+  - Live foreign calls are strictly forbidden in `wolio test` and `wolio verify`. Any test executing code with effect `Foreign::Call` must supply a mock implementation in a `with_mock` block; unmocked foreign calls in tests fail with `WOLIO-EFFECT-002`.
+
+## 8. Fixed-width integer scalar types for interop & hardware registers
+
+To support hardware register manipulation, network protocols, binary serialisation, and foreign function interop without introducing raw pointers or C undefined behavior, V3 introduces six exact fixed-width integer scalar types:
+
+| Type | Bit width | Signedness | Min value | Max value | Native LLVM IR Type |
+|---|---|---|---|---|---|
+| `UInt8` | 8-bit | Unsigned | `0` | `255` | `i8` |
+| `UInt16` | 16-bit | Unsigned | `0` | `65535` | `i16` |
+| `UInt32` | 32-bit | Unsigned | `0` | `4294967295` | `i32` |
+| `Int8` | 8-bit | Signed | `-128` | `127` | `i8` |
+| `Int16` | 16-bit | Signed | `-32768` | `32767` | `i16` |
+| `Int32` | 32-bit | Signed | `-2147483648` | `2147483647` | `i32` |
+
+- **Checked arithmetic with zero silent truncation:**
+  - Standard arithmetic operators `+`, `-`, `*`, `/`, `%` perform checked arithmetic within the exact range of the type.
+  - Overflow, underflow, or division by zero immediately triggers a runtime fault (`WOLIO-RUNTIME-001` or `WOLIO-CONTRACT-004` within contracts).
+  - Silent wraparound and truncation are completely eliminated by design.
+- **Checked bitwise operations:**
+  - Functional bitwise primitives: `bit_and`, `bit_or`, `bit_xor`, `bit_not`, `bit_shl`, `bit_shr`.
+  - Shift amounts `n` are checked: `0 <= n < 8` for `UInt8`/`Int8`, `0 <= n < 16` for `UInt16`/`Int16`, and `0 <= n < 32` for `UInt32`/`Int32`. Shift amounts outside these bounds fault with `WOLIO-RUNTIME-001`.
+- **Explicit checked conversions:**
+  - Explicit narrowing constructors validate limits at runtime:
+    - `UInt8::from_uint(x: UInt) -> UInt8` (faults with `WOLIO-RUNTIME-001` if `x > 255`)
+    - `UInt16::from_uint(x: UInt) -> UInt16` (faults if `x > 65535`)
+    - `UInt32::from_uint(x: UInt) -> UInt32` (faults if `x > 4294967295`)
+    - `Int8::from_int(x: Int) -> Int8` (faults if `x < -128 || x > 127`)
+    - `Int16::from_int(x: Int) -> Int16` (faults if `x < -32768 || x > 32767`)
+    - `Int32::from_int(x: Int) -> Int32` (faults if `x < -2147483648 || x > 2147483647`)
+  - Explicit widening methods:
+    - `UInt8::to_uint(val: UInt8) -> UInt`
+    - `UInt16::to_uint(val: UInt16) -> UInt`
+    - `UInt32::to_uint(val: UInt32) -> UInt`
+    - `Int8::to_int(val: Int8) -> Int`
+    - `Int16::to_int(val: Int16) -> Int`
+    - `Int32::to_int(val: Int32) -> Int`
+  - Zero implicit widening or narrowing coercions: passing `UInt8` where `UInt` is expected, or vice versa, fails type-checking with `WOLIO-TYPE-001`.
+
 

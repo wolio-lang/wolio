@@ -1,17 +1,17 @@
 `.blueprint/BASELINE-V3.md`
-# Wolio V3 — Industrial Standard Library, Capability I/O, Secrets, Transactions, and Contract Fuzzing
+# Wolio V3 — Capability-Gated FFI, Fixed-Width Integers, Standard Library, Capability I/O, Secrets, Transactions, and Contract Fuzzing
 
-**Status:** planned industrial baseline after V2, 2026-11-10. Design revision: `1.4` (`[language] version = "3"`).  
+**Status:** planned industrial baseline after V2, 2026-11-14. Design revision: `1.5` (`[language] version = "3"`).  
 **Entry prerequisite:** Complete V2 (`M08`–`M11`) acceptance + V2 Bug-Fix & Hardening Gate (`M12`).
 
 ## 1. Purpose of V3
 
 After V1 establishes the contract-first core and V2 adds total bounded loops,
 collections, `Decimal`, pure predicates, and module architecture enforcement, V3
-transforms Wolio into a **self-sufficient industrial backend language** while
-closing the remaining avenues for AI technical debt:
+transforms Wolio into a **safe systems programming and industrial backend language**
+enabling safe AI vibe coding without raw pointers or scope-bloat:
 
-1. **V2 Bug-Fix, Performance & Hardening Gate (`M12`):** Fix all defects and
+1. **V2 Bug-Fix, Memory & Performance Gate (`M12`):** Fix all defects and
    performance bottlenecks found in V2 loops, collections, formatter, LSP, and
    LLVM lowering before introducing V3 features.
 2. **Industrial Standard Library (`std::*`):** Provide battery-included,
@@ -22,14 +22,27 @@ closing the remaining avenues for AI technical debt:
    logging/serialization a compile-time error (`WOLIO-SECURITY-001`) and enforce
    smart-constructor validation provenance on untrusted external data.
 4. **Capability-Gated External I/O & Mandatory Deterministic Test Mocks:** Require
-   every I/O effect (`Clock::Read`, `Fs::*`, `Net::*`, `Db::*`) to be authorized in
-   `wolio.toml` `[capabilities]` and **forbid live external I/O inside `wolio test` /
-   `wolio verify`**, forcing deterministic `with_mock` handlers (`WOLIO-EFFECT-002`).
-5. **Linear Resource Handles & Atomic `transaction` Frames:** Prevent aliasing of
-   mutable external resources (`resource DbHandle`), enforce `modifies [db]` frames,
-   support `old(expr)` pre-state snapshots in `ensures`, and verify rollback
-   postconditions on error paths.
-6. **Contract-Driven Property Fuzzing (`property` & `wolio verify --fuzz`):**
+   every I/O effect (`Clock::Read`, `Fs::*`, `Net::*`, `Db::*`, `Foreign::Call`) to be
+   authorized in `wolio.toml` `[capabilities]` and **forbid live external I/O inside
+   `wolio test` / `wolio verify`**, forcing deterministic `with_mock` handlers
+   (`WOLIO-EFFECT-002`).
+5. **Linear Resource Handles & Explicit Acquisition:** Prevent aliasing of
+   mutable external resources (`resource DbHandle`), resolve instantiation deadlocks
+   via explicit `Resource::acquire::<T>(...)` at entrypoints and `Resource::mock::<T>()`
+   in test mocks, enforce `modifies [db]` frames, support `old(expr)` pre-state
+   snapshots in `ensures`, and verify rollback postconditions on error paths.
+6. **Capability-Gated Foreign Function Interface (FFI):** Safe systems interop
+   boundary without raw pointers or `unsafe` blocks. Declares linear opaque
+   `foreign type` with scope-bound auto-drop destructors (`WOLIO-FOREIGN-002`) and
+   contract-guarded `foreign operation`s backed by compiler-generated C glue code.
+   All external libraries must be explicitly authorized in `wolio.toml` `[foreign]`
+   `allowed_libraries` (`WOLIO-FOREIGN-001`, `HUMAN_REQUIRED`).
+7. **Fixed-Width Integer Types for Interop & Registers:** Add exact scalar integers
+   `UInt8`..`UInt32` and `Int8`..`Int32` mapped directly to native LLVM `i8`, `i16`,
+   `i32`. Arithmetic is strictly checked (faulting on overflow with `WOLIO-RUNTIME-001`),
+   and conversions are explicit and checked (`UInt8::from_uint(x)`), eliminating
+   silent truncation.
+8. **Contract-Driven Property Fuzzing (`property` & `wolio verify --fuzz`):**
    Automatically generate hundreds of deterministic boundary and PRNG inputs
    satisfying `requires` to test `ensures`, making it impossible for an AI agent to
    pass verification by hardcoding responses to 2–3 unit test cases.
@@ -37,11 +50,12 @@ closing the remaining avenues for AI technical debt:
 ## 2. Non-collision guarantees with V1 and V2
 
 - All V3 keywords (`secret`, `Secret`, `resource`, `transaction`, `modifies`, `old`,
-  `property`, `std`) are reserved from day one in `CORE_V1.md`.
+  `property`, `std`, `with_mock`, `where`, `fn`, `foreign`) are reserved from day
+  one in `CORE_V1.md` (24 forward-reserved keywords).
 - `std::*` occupies a reserved top-level namespace that user modules in V1 and V2
   cannot declare (`std` is a reserved keyword).
 - V3 diagnostics (`WOLIO-SECURITY-001`, `WOLIO-EFFECT-002`, `WOLIO-RESOURCE-001`,
-  `WOLIO-FUZZ-001`) are strictly additive.
+  `WOLIO-FOREIGN-001`, `WOLIO-FOREIGN-002`, `WOLIO-FUZZ-001`) are strictly additive.
 
 ## 3. V3 delivery profiles (`M12`–`M15`)
 
@@ -49,12 +63,14 @@ closing the remaining avenues for AI technical debt:
 |---|---|---|---|
 | `M12` — V2 Bug-Fix, Memory & Performance Gate | `T301`–`T303` | Resolve all V2 bug reports (`BUG-*`); optimize reference-counted `List`/`Map` copy-on-write storage in runtime/LLVM; harden formatter/LSP on large workspaces | Zero open V2 P0/P1 bugs; memory-leak and CoW benchmark gates pass |
 | `M13` — Standard Library (`std::*`) & Opaque `Secret<T>` | `T304`–`T307` | Implement pure `std::string`, `std::collections`, `std::math`, `std::json` and `Secret<T>` redaction/sink enforcement (`WOLIO-SECURITY-001`) + `std::crypto` | Conformance suites for all `std::*` pure modules and secret-leak rejection |
-| `M14` — Capability I/O, Deterministic Test Mocks & Transactions | `T308`–`T311` | Implement `std::time`, `std::fs`, `std::net`, `resource` non-aliasing (`WOLIO-RESOURCE-001`), `modifies`/`old(...)`, `transaction` rollback verification, and mandatory `with_mock` in tests (`WOLIO-EFFECT-002`) | Fault-injected transaction rollback fixtures; unmocked-test-I/O rejection fixtures |
-| `M15` — Contract Property Fuzzing, Agent Protocol v3 & V3 Release | `T312`–`T315` | Implement `property` declarations and `wolio verify --fuzz` shrinking counterexamples; update Agent Protocol v3, formatter, LSP, and native backend; run full W01–W15 industrial benchmark | AI hardcoded-branch defeat fixtures (`WOLIO-FUZZ-001`); V3 Linux x86_64 release and benchmark report |
+| `M14` — Capability I/O, Transactions & Capability-Gated FFI | `T308`–`T311`, `T316`–`T319` | Implement `std::time`, `std::fs`, `std::net`, `resource` acquisition & non-aliasing (`WOLIO-RESOURCE-001`), `modifies`/`old(...)`, `transaction` rollback, mandatory `with_mock` in tests (`WOLIO-EFFECT-002`), capability-gated foreign modules (`foreign type`, `foreign operation`, `WOLIO-FOREIGN-001`/`002`), fixed-width integers (`UInt8`..`UInt32`, `Int8`..`Int32`), and C glue contracts | Fault-injected transaction rollback fixtures; unmocked-test-I/O rejection fixtures; foreign manifest gating & contract marshalling fixtures |
+| `M15` — Contract Property Fuzzing, Agent Protocol v3 & V3 Release | `T312`–`T315` | Implement `property` declarations and `wolio verify --fuzz` shrinking counterexamples; update Agent Protocol v3, formatter, LSP, and native backend; run full W01–W16 industrial benchmark | AI hardcoded-branch defeat fixtures (`WOLIO-FUZZ-001`); V3 Linux x86_64 release and benchmark report |
 
 ## 4. Normative V3 documents
 
+- Paradigm authority: [ADR-009](01-architecture/decisions/ADR-009-unconventional-paradigm-unification.md)
 - Language grammar and semantics: [CORE_V3.md](02-specifications/language/CORE_V3.md)
 - Implementation architecture and crate extensions: [IMPLEMENTATION_SPECIFICATION_V3.md](03-implementation/IMPLEMENTATION_SPECIFICATION_V3.md)
-- Standalone task contracts (`T301`–`T315`): [task-index.md](04-tasks/task-index.md) and [V3-TASKS.md](04-tasks/V3-TASKS.md)
+- Standalone task contracts (`T301`–`T319`): [task-index.md](04-tasks/task-index.md) and [V3-TASKS.md](04-tasks/V3-TASKS.md)
+
 

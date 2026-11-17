@@ -8,15 +8,16 @@
 | Depends on | T312 |
 | Blocks | T314 |
 | Acceptance families | V3-FUZZ, AGENT |
-| Bounded areas | `crates/wolio-agent`, `crates/wolio-analyzer` |
+| Bounded areas | `crates/wolio-agent`, `crates/wolio-semantic` (submodule `analyzer`) |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T313.md` |
 
 ## Objective
 Upgrade `crates/wolio-agent` to support `protocol_version: 3` (`wolio.mutation.v3`)
 with typed AST mutation payloads for `property`, `resource`, `modifies`, `old`,
-`transaction`, and `with_mock`, enforce `HUMAN_REQUIRED` approval on any
-`modifies` frame, `Secret<T>` sink, or `[capabilities]` change, and require
+`transaction`, `with_mock`, `foreign` declarations (`foreign type`, `foreign operation`),
+and fixed-width integers, enforce `HUMAN_REQUIRED` approval on any `modifies` frame,
+`Secret<T>` sink, `[foreign]`, or `[capabilities]` change, and require
 `wolio verify --fuzz` to pass before `apply` and `finalize`.
 
 ## Authority
@@ -31,13 +32,15 @@ with typed AST mutation payloads for `property`, `resource`, `modifies`, `old`,
 - **New V3 AST payload schemas in `protocol_version: 3`:**
   1. Declaration kind `"resource"`: `{ "kind": "resource", "name": identifier, "public": boolean }`.
   2. Declaration kind `"property"`: `{ "kind": "property", "name": identifier, "target_operation": identifier, "parameters": [{ "name", "type" }], "where": expr | null, "lets": [{ "name", "value" }], "body": expr }`.
-  3. Parameter mode `"resource"`: `{ "name": identifier, "type": type, "mode": "value" | "resource" }` (defaults to `"value"`).
-  4. Operation contract field `"modifies"`: `[identifier, ...]`.
-  5. Expression kind `"old"`: `{ "kind": "old", "expr": expr }`.
-  6. Expression kind `"transaction"`: `{ "kind": "transaction", "handle": identifier, "lets": [{ "name", "value" }], "body": expr }`.
-  7. Expression kind `"with_mock"`: `{ "kind": "with_mock", "handlers": [{ "target": qualified_ident, "parameters": [...], "return_type": type, "lets": [...], "body": expr }], "lets": [...], "body": expr }`.
+  3. Declaration kind `"foreign_type"`: `{ "kind": "foreign_type", "name": identifier, "library": string, "public": boolean }`.
+  4. Declaration kind `"foreign_op"`: `{ "kind": "foreign_op", "name": identifier, "library": string, "parameters": [...], "return_type": type, "requires": expr | null, "ensures": expr | null, "effects": [...], "errors": [...] }`.
+  5. Parameter mode `"resource"`: `{ "name": identifier, "type": type, "mode": "value" | "resource" }` (defaults to `"value"`).
+  6. Operation contract field `"modifies"`: `[identifier, ...]`.
+  7. Expression kind `"old"`: `{ "kind": "old", "expr": expr }`.
+  8. Expression kind `"transaction"`: `{ "kind": "transaction", "handle": identifier, "lets": [{ "name", "value" }], "body": expr }`.
+  9. Expression kind `"with_mock"`: `{ "kind": "with_mock", "handlers": [{ "target": qualified_ident, "parameters": [...], "return_type": type, "lets": [...], "body": expr }], "lets": [...], "body": expr }`.
 - **V3 Approval Tier & Verification Gate rules (`APPROVAL_MATRIX_V1.md` + `V3-TASKS.md`):**
-  - Any mutation that adds, removes, or modifies a `modifies [...]` clause, adds `Secret::Use` or changes a `Secret<T>` parameter/sink, weakens or deletes an existing `property` declaration, or alters `[capabilities]` is classified as `HUMAN_REQUIRED`.
+  - Any mutation that adds, removes, or modifies a `modifies [...]` clause, adds `Secret::Use` or changes a `Secret<T>` parameter/sink, weakens or deletes an existing `property` declaration, or alters `[capabilities]` or `[foreign]` is classified as `HUMAN_REQUIRED`.
   - Adding a new `property` declaration or strengthening a private implementation inside an existing `transaction` frame without changing contracts/effects is classified as `AUTO` (or `POST_REVIEW` if adding new tests/mocks).
   - For all `[language] version = "3"` workspaces, `plan`, `apply`, and `finalize` automatically run `wolio verify --fuzz`; any `WOLIO-FUZZ-001` counterexample blocks `apply` and `finalize` and returns the shrunk counterexample in the structured diagnostic repair response.
   - All `.wolio-log/` request/response/journal files redact any `Secret<T>` test values as `"<REDACTED:Secret>"`.
@@ -49,7 +52,7 @@ In scope:
 - Mandatory `wolio verify --fuzz` execution during `wolio-agent` `plan`/`apply`/`finalize` for V3 workspaces.
 
 Out of scope (owner):
-- V3 Native LLVM, `wolio fmt`, and `wolio lsp` parity (T314); full W01–W15 benchmark and V3 release (T315).
+- V3 Native LLVM, `wolio fmt`, and `wolio lsp` parity (T314); full W01–W16 benchmark and V3 release (T315).
 
 ## Normative requirements
 - `protocol_version: 3` requires structured AST objects for all V3 constructs (`property`, `resource`, `modifies`, `old`, `transaction`, `with_mock`) and rejects raw source strings or text diffs (MUTATION_SCHEMA_V1, V3-TASKS).

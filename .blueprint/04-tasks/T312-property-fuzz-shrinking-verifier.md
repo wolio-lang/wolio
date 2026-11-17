@@ -5,10 +5,10 @@
 |---|---|
 | Milestone | `M15` |
 | Priority | `P0` |
-| Depends on | T311 |
+| Depends on | T319 (M14 completion) |
 | Blocks | T313 |
 | Acceptance families | V3-FUZZ (`property`, `wolio verify --fuzz`, and `WOLIO-FUZZ-001`) |
-| Bounded areas | `crates/wolio-ast`, `crates/wolio-parser`, `crates/wolio-resolver`, `crates/wolio-semantic`, `crates/wolio-contracts`, `crates/wolio-analyzer`, `crates/wolio-verify`, `crates/wolio-cli` |
+| Bounded areas | `crates/wolio-ast`, `crates/wolio-parser`, `crates/wolio-semantic` (submodules `resolver`, `graph`, `contracts`, `analyzer`), `crates/wolio-verify`, `crates/wolio-cli` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T312.md` |
 
@@ -40,7 +40,7 @@ automatically defeated with minimal counterexamples (Taxonomy `W05`).
       pub body: Box<Expr>,
   }
   ```
-- **Identity, resolution, and static rules (`crates/wolio-resolver`, `crates/wolio-semantic`, `crates/wolio-contracts`, `crates/wolio-analyzer`):**
+- **Identity, resolution, and static rules (`crates/wolio-semantic::resolver`, `crates/wolio-semantic::graph`, `crates/wolio-semantic::contracts`, `crates/wolio-semantic::analyzer`):**
   - `property` declarations receive deterministic `sym_` IDs with `kind = "property"` under hash domain `"wolio.symbol.v1"`.
   - `target_op` must resolve to a visible `operation`, and `params` must match `target_op`'s parameter count and types (`WOLIO-TYPE-001`).
   - `where_clause` (if present) must be a pure `Bool` expression (same purity rules as `requires`: no `operation` calls, `WOLIO-CONTRACT-001`).
@@ -92,6 +92,6 @@ cargo test --workspace
 Evidence: `.execution/reports/T312.md` with `V3-FUZZ` hardcoded-branch defeat fixtures and shrinking counterexample transcripts.
 
 ## Dependencies and open items
-- Depends on: T311; blocks: T313.
+- Depends on: T319; blocks: T313.
 - Open: none.
 

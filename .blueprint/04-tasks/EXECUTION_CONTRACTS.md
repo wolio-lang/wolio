@@ -2,10 +2,10 @@
 # V1–V3 task execution rules
 
 Shared rules for every registered Wolio task across V1 (`T001`–`T074`), V2
-(`T201`–`T216`), and V3 (`T301`–`T315`). Every V1 (`T001`–`T074`), V2
-(`T201`–`T216`), and V3 (`T301`–`T315`) task's complete contract lives in its
-own self-contained file registered in [task-index.md](task-index.md) (with V2
-and V3 also summarized in [V2-TASKS.md](V2-TASKS.md) and
+(`T201`–`T216`), and V3 (`T301`–`T319`). Every V1 (`T001`–`T074`), V2
+(`T201`–`T216`), and V3 (`T301`–`T319`) task's complete contract lives in its
+own self-contained file registered in [task-index.md](task-index.md) (with
+milestones also summarized in [V1-TASKS.md](V1-TASKS.md), [V2-TASKS.md](V2-TASKS.md), and
 [V3-TASKS.md](V3-TASKS.md)). Actual readiness and live states belong only to
 `.execution/task-status.md`.
 
@@ -29,7 +29,7 @@ that single task **without reading the entire repository**:
 | Language, protocol, package, and evidence behavior | Normative documents listed in [../DOCUMENT_AUTHORITY.md](../DOCUMENT_AUTHORITY.md) |
 | Acceptance family definitions | [../05-quality/ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) |
 | Milestone order and milestone gates | [../06-project-management/DELIVERY_PLAN.md](../06-project-management/DELIVERY_PLAN.md) |
-| One task's objective, scope, dependencies, self-contained rules, and verification | That task's contract (`Tnnn-*.md`, `V2-TASKS.md`, or `V3-TASKS.md`) |
+| One task's objective, scope, dependencies, self-contained rules, and verification | That task's individual contract file (`04-tasks/Tnnn-*.md`) as sole normative authority (`task-index.md`, `V1-TASKS.md`, `V2-TASKS.md`, `V3-TASKS.md` are non-normative indexes) |
 | Task ID allocation and file location | [task-index.md](task-index.md) |
 | Live status, blockers, decisions, and evidence | Repository `.execution/` |
 
@@ -42,7 +42,7 @@ fix it in one documentation amendment.
 - **Numbering blocks:**
   - **V1 (`M01`–`M07`):** `M01` `T001`–`T019`, `M02` `T020`–`T029`, `M03` `T030`–`T039`, `M04` `T040`–`T049`, `M05` `T050`–`T059`, `M06` `T060`–`T069`, `M07` `T070`–`T079`.
   - **V2 (`M08`–`M11`):** `M08` `T201`–`T203` (V1 Bug-Fix Gate), `M09` `T204`–`T208` (Bounded Loops & Collections), `M10` `T209`–`T212` (Predicates, Architecture & Agent v2), `M11` `T213`–`T216` (V2 Native & Benchmark).
-  - **V3 (`M12`–`M15`):** `M12` `T301`–`T303` (V2 Bug-Fix & Perf Gate), `M13` `T304`–`T307` (`std::*` & `Secret<T>`), `M14` `T308`–`T311` (Capability I/O & Transactions), `M15` `T312`–`T315` (Property Fuzzing & V3 Release).
+  - **V3 (`M12`–`M15`):** `M12` `T301`–`T303` (V2 Bug-Fix & Perf Gate), `M13` `T304`–`T307` (`std::*` & `Secret<T>`), `M14` `T308`–`T311`, `T316`–`T319` (Capability I/O, Transactions & Capability-Gated FFI), `M15` `T312`–`T315` (Property Fuzzing & V3 Release).
 - **Bug-fix records (`BUG-nnnn`):** Defects discovered during or after a task use
   `.execution/reports/BUG-nnnn.md` and must add a permanent failing-then-passing
   regression fixture under `tests/conformance/regressions/BUG-nnnn/`.

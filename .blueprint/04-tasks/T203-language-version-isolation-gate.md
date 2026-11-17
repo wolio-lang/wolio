@@ -43,7 +43,7 @@ clause hashes, snapshot hashes, and diagnostics, completing M08.
 
 ## Scope
 In scope:
-- Parsing and propagating `LanguageVersion::{V1, V2}` from `wolio.toml` (and standalone file default/flag) through `wolio-cli`, `wolio-parser`, `wolio-semantic`, `wolio-types`, and `wolio-verify`.
+- Parsing and propagating `LanguageVersion::{V1, V2}` from `wolio.toml` (and standalone file default/flag) through `wolio-cli`, `wolio-parser`, `wolio-semantic` (including `types` submodule), and `wolio-verify`.
 - Registering V2 diagnostic code metadata (`WOLIO-CONTRACT-005`, `WOLIO-CONTRACT-006`, `WOLIO-ARCH-001`) in `wolio-diagnostics`.
 - Conformance tests proving that `version = "1"` projects produce bit-for-bit identical `sym_` IDs, snapshot hashes, and diagnostics under the V2 compiler, and that `version = "3"` or unknown versions fail with `WOLIO-FEATURE-001`.
 

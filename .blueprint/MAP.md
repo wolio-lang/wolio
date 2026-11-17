@@ -1,24 +1,25 @@
 `.blueprint/MAP.md`
-# Blueprint map (Revision 1.4 — V1, V2, and V3)
+# Blueprint map (Revision 1.5 — V1, V2, and V3)
 
-Revision 1.4 freeze candidate; zero conflicting historical documents remain.
+Revision 1.5 freeze candidate; zero conflicting historical documents remain.
 
 ## 1. Master baselines and authority
 
 1. [Document authority](DOCUMENT_AUTHORITY.md)
-2. [V1 baseline (`M01`–`M07`)](BASELINE-V1.md)
-3. [V2 baseline (`M08`–`M11`: loops, collections, Decimal, predicates, architecture)](BASELINE-V2.md)
-4. [V3 baseline (`M12`–`M15`: `std::*`, capability I/O, secrets, transactions, fuzzing)](BASELINE-V3.md)
-5. [Whole-project coverage](00-product/PROJECT_COVERAGE.md)
-6. [Delivery plan](06-project-management/DELIVERY_PLAN.md)
-7. [Task index (`T001`–`T074`, `T201`–`T216`, `T301`–`T315`)](04-tasks/task-index.md)
-8. [Acceptance matrix](05-quality/ACCEPTANCE_MATRIX.md)
-9. [Ubuntu and agent quickstart](07-ai-context/GETTING_STARTED.md)
+2. [Vibe-Native Architecture (ADR-010)](01-architecture/decisions/ADR-010-vibe-native-zero-inspection-architecture.md)
+3. [V1 baseline (`M01`–`M07`)](BASELINE-V1.md)
+4. [V2 baseline (`M08`–`M11`: streams, collections, Decimal, architecture)](BASELINE-V2.md)
+5. [V3 baseline (`M12`–`M15`: `std::*`, WASI FFI, actors, ephemeral sandboxes)](BASELINE-V3.md)
+6. [Whole-project coverage](00-product/PROJECT_COVERAGE.md)
+7. [Delivery plan](06-project-management/DELIVERY_PLAN.md)
+8. [Task index (`T001`–`T074`, `T201`–`T216`, `T301`–`T319`)](04-tasks/task-index.md)
+9. [Acceptance matrix](05-quality/ACCEPTANCE_MATRIX.md)
+10. [Ubuntu and agent quickstart](07-ai-context/GETTING_STARTED.md)
 
 ## 2. Self-contained task lookup
 
-Every V1 task file (`04-tasks/Tnnn-*.md`) and V2/V3 task specification
-([V2-TASKS.md](04-tasks/V2-TASKS.md), [V3-TASKS.md](04-tasks/V3-TASKS.md))
+Every task contract file (`04-tasks/Tnnn-*.md`) and milestone task specification
+([V1-TASKS.md](04-tasks/V1-TASKS.md), [V2-TASKS.md](04-tasks/V2-TASKS.md), [V3-TASKS.md](04-tasks/V3-TASKS.md))
 embeds its required crate boundaries, rules, and diagnostic codes. Only consult
 the normative reference below if an implementation detail needs deeper context:
 

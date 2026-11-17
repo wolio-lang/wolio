@@ -24,6 +24,9 @@ verifier may construct the opaque `VerifiedWolioIr` input accepted by codegen. I
 binds immutable IR to the snapshot and completed static checks; transformed IR
 must be reverified. Runtime guards remain mandatory in release builds. `run` and
 `test` use the interpreter by default; `build` explicitly invokes native codegen.
+`wolio-codegen` emits verified textual LLVM IR (`.ll`) and compiles to native
+binaries via the pinned `clang` toolchain (linking with `libwolio_runtime.a`),
+ensuring hermetic reproducibility without Cargo `llvm-sys` FFI build failures.
 LLVM optimization must preserve faults and guards; differential fixtures
 comparing interpreter and native execution are the release gate. Immutable heap
 values use reference counting initially (with copy-on-write optimization for

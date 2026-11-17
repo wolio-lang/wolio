@@ -8,7 +8,7 @@
 | Depends on | T207 |
 | Blocks | T209 (M10 entry) |
 | Acceptance families | V2-DATA (`format`); completes M09 |
-| Bounded areas | `crates/wolio-types`, `crates/wolio-contracts`, `crates/wolio-runtime` |
+| Bounded areas | `crates/wolio-semantic` (submodules `types`, `contracts`), `crates/wolio-runtime` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T208.md` |
 
@@ -22,7 +22,7 @@ for `format(template: String, args...) -> String`, completing M09.
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V2-DATA`, M09 row of [DELIVERY_PLAN.md](../06-project-management/DELIVERY_PLAN.md), [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **Template syntax & compile-time validation (`crates/wolio-types`):**
+- **Template syntax & compile-time validation (`crates/wolio-semantic::types`):**
   - First argument to `format(template, ...)` must be a compile-time string literal (`Expr::StringLiteral`); passing a variable or non-string expression as the template fails with `WOLIO-TYPE-001`.
   - Placeholder syntax in `template`:
     - `{}` is a positional argument placeholder.

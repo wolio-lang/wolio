@@ -1,24 +1,26 @@
 `.blueprint/DOCUMENT_AUTHORITY.md`
-# Document authority — revision 1.4
+# Document authority — revision 1.5
 
-This register is the entry point for the entire Wolio blueprint. Revision 1.4 is
+This register is the entry point for the entire Wolio blueprint. Revision 1.5 is
 a pre-implementation freeze candidate across the three-generation roadmap
 (`V1 -> V2 -> V3`), not owner acceptance or shipped software.
 
 ## 1. Zero-clutter authority rule
 
-In Revision 1.4, all 46 superseded historical draft files (`LANGUAGE_SPEC.md`,
+In Revision 1.5, all 46 superseded historical draft files (`LANGUAGE_SPEC.md`,
 `SCOPE.md`, `WTP_SPEC.md`, historical crate sketches, and `M00-*` drafts) have
 been removed from `.blueprint/`. Every file remaining in `.blueprint/` is active,
-normative for its version, and non-contradictory.
+normative for its version (unless explicitly marked non-normative overview), and
+non-contradictory.
 
 ## 2. Binding reading order
 
 1. **Authority & Version Baselines:**
    - This register (`DOCUMENT_AUTHORITY.md`)
+   - [ADR-010](01-architecture/decisions/ADR-010-vibe-native-zero-inspection-architecture.md): Vibe-Native Zero-Code Inspection Architecture (7 pillars, Context Spine, and anti-pathology mechanics).
    - [BASELINE-V1.md](BASELINE-V1.md): V1 scope (`M01`–`M07`, `T001`–`T074`)
    - [BASELINE-V2.md](BASELINE-V2.md): V2 scope (`M08`–`M11`, `T201`–`T216`)
-   - [BASELINE-V3.md](BASELINE-V3.md): V3 scope (`M12`–`M15`, `T301`–`T315`)
+   - [BASELINE-V3.md](BASELINE-V3.md): V3 scope (`M12`–`M15`, `T301`–`T319`)
    - [00-product/PROJECT_COVERAGE.md](00-product/PROJECT_COVERAGE.md): complete V1/V2/V3 capability matrix.
 2. **Normative Language, Protocol & Verification Specifications:**
    - V1 Language: [02-specifications/language/CORE_V1.md](02-specifications/language/CORE_V1.md)
@@ -40,11 +42,20 @@ normative for its version, and non-contradictory.
    - [06-project-management/DELIVERY_PLAN.md](06-project-management/DELIVERY_PLAN.md), [06-project-management/POST_V1_PLAN.md](06-project-management/POST_V1_PLAN.md), [06-project-management/AI_BUG_TAXONOMY.md](06-project-management/AI_BUG_TAXONOMY.md)
    - [04-tasks/EXECUTION_CONTRACTS.md](04-tasks/EXECUTION_CONTRACTS.md), [04-tasks/task-index.md](04-tasks/task-index.md)
 4. **Self-Contained Task Contracts (`04-tasks/`):**
-   - Every V1 task (`T001`–`T074`), every V2 task (`T201`–`T216`, also summarized in [04-tasks/V2-TASKS.md](04-tasks/V2-TASKS.md)), and every V3 task (`T301`–`T315`, also summarized in [04-tasks/V3-TASKS.md](04-tasks/V3-TASKS.md)) has its own standalone, self-contained task file embedding its required crate boundaries, rules, and diagnostic codes.
+   - Every V1 task (`T001`–`T074`), every V2 task (`T201`–`T216`), and every V3 task (`T301`–`T319`) has its own standalone, self-contained task file (`Tnnn-*.md`) embedding its required crate boundaries, rules, and diagnostic codes.
+5. **Informational & Navigation Registers (Non-normative Overviews):**
+   - [README.md](README.md): Repository landing page and fast context.
+   - [MAP.md](MAP.md): High-level directory and task navigation map.
+   - [blueprint.md](blueprint.md): Master philosophy and multi-generation overview.
+   - [GLOSSARY.md](GLOSSARY.md): Common terms and definitions.
+   - [CHANGELOG.md](CHANGELOG.md): Non-normative history of blueprint revisions.
+   - [04-tasks/V1-TASKS.md](04-tasks/V1-TASKS.md), [04-tasks/V2-TASKS.md](04-tasks/V2-TASKS.md), and [04-tasks/V3-TASKS.md](04-tasks/V3-TASKS.md): Milestone task summary indexes (the respective `Tnnn-*.md` files are sole normative sources).
 
-## 3. Revision 1.4 governance
+## 3. Revision 1.5 governance
 
-Revision 1.4 incorporates [ADR-008](01-architecture/decisions/ADR-008-multi-version-anti-workaround-roadmap.md)
+Revision 1.5 incorporates [ADR-010](01-architecture/decisions/ADR-010-vibe-native-zero-inspection-architecture.md),
+[ADR-009](01-architecture/decisions/ADR-009-unconventional-paradigm-unification.md),
+[ADR-008](01-architecture/decisions/ADR-008-multi-version-anti-workaround-roadmap.md),
 and [ADR-007](01-architecture/decisions/ADR-007-deterministic-identity-and-gated-automation.md).
 Where two normative documents appear to disagree, stop the affected task, record
 the exact conflict under `.execution/blockers/`, and resolve it by amendment; do

@@ -15,7 +15,7 @@
 ## Objective
 Audit every defect, compiler edge case, diagnostic mismatch, and benchmark
 escape discovered during V1 (`M01`–`M07`, including `T034` trial and `T062`
-24-task evaluation) and encode each defect as a deterministic, reproducible
+10-task Contract & Protocol benchmark) and encode each defect as a deterministic, reproducible
 conformance fixture under `tests/conformance/regressions/BUG-nnnn/` before any
 V2 feature work begins.
 
@@ -30,7 +30,7 @@ V2 feature work begins.
   - `tests/conformance/regressions/BUG-nnnn/src/main.wol`
   - `tests/conformance/regressions/BUG-nnnn/expected.json` (pinning exact expected command, exit code, diagnostics array, and runtime output/fault)
 - **Bug report record layout:**
-  - `.execution/reports/BUG-nnnn.md` recording: defect ID, originating V1 task or benchmark run (`T001`–`T074`), root-cause subsystem (`lexer`, `parser`, `resolver`, `types`, `contracts`, `effects`, `analyzer`, `agent`, `ir`, `codegen`, `package`, `format`, or `lsp`), reproduction fixture path, and severity (`P0`/`P1`/`P2`).
+  - `.execution/reports/BUG-nnnn.md` recording: defect ID, originating V1 task or benchmark run (`T001`–`T074`), root-cause subsystem (`lexer`, `parser`, `semantic` [submodules `resolver`, `types`, `graph`, `contracts`, `effects`, `analyzer`], `agent`, `ir`, `codegen`, `package`, `format`, or `lsp`), reproduction fixture path, and severity (`P0`/`P1`/`P2`).
 - **Host runner integration:**
   - `crates/wolio-verify` and workspace conformance test harness discover and run all `tests/conformance/regressions/BUG-*` fixtures in deterministic lexicographical order.
 

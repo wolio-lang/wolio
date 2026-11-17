@@ -52,7 +52,7 @@ Out of scope (owner):
 ## Acceptance criteria
 Positive and boundary:
 - [ ] Re-running the analysis command over `benchmarks/results` reproduces identical tables and 10,000-resample bootstrap 95% intervals
-- [ ] Report includes all 24 tasks, all four arms, `AI_BUG_TAXONOMY` counts, cost/time ratios and training-familiarity limitations
+- [ ] Report includes all 10 tasks, all four arms, `AI_BUG_TAXONOMY` counts, cost/time ratios and training-familiarity limitations
 
 Rejection and failure:
 - [ ] Any improvement claim failing the positive 95% lower-bound or <= 2× median cost/time threshold is rejected by the report check

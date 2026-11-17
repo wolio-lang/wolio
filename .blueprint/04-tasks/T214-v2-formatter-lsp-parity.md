@@ -41,9 +41,10 @@ navigation.
     };
     ```
   - Preserve `//` comments attached to `predicate`, `bound`, `invariant`, and loop body statements; verify that formatting preserves every `sym_` declaration ID (including `kind = "predicate"`) and normalized contract/loop clause hash.
+  - Format turbofish constructor calls canonically without spaces inside `::<...>` (e.g. `List::empty::<Int>()`, `Map::empty::<String, Int>()`).
 - **LSP V2 capabilities (`crates/wolio-lsp`):**
   - Diagnostics: publish real-time `WOLIO-CONTRACT-005`/`006` static checks, `WOLIO-ARCH-001` import diagnostics, and V2 analyzer diagnostics on unsaved in-memory document overlays.
-  - Hover: display `predicate` signatures, `List<T>` / `Map<K, V>` / `Decimal` / `UInt` / `Bytes` inferred types, and loop `item`/`acc` binding types.
+  - Hover: display `predicate` signatures, `List<T>` / `Map<K, V>` / `Decimal` / `UInt` / `Bytes` inferred types, bitwise functions, and loop `item`/`acc` binding types.
   - Go-to-definition & Find-references: resolve `predicate` calls inside `requires`, `ensures`, `bound`, `invariant`, and other `predicate`s, as well as local references to loop `item` and `acc`.
   - Workspace rename (`textDocument/rename`): safely rename `predicate` declarations (updating all callers across modules and contracts) and loop `item`/`acc` variables with document version checking.
 

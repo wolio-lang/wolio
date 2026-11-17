@@ -36,6 +36,9 @@ Out of scope (owner):
 
 ## Normative requirements
 - Left-to-right evaluation; `&&`, `||`, `if`, and `match` evaluate only the selected continuation (CORE_V1).
+- Statement expressions (`expr;`) in a block are evaluated for their side effect
+  (e.g. `console::print(...)`) and the resulting value discarded; this is safe
+  because T021 guarantees only `Unit`-typed expressions reach this position (CORE_V1).
 - Overflow, division by zero, and `MIN / -1` are runtime faults (`WOLIO-RUNTIME-001`, exit `1`); division truncates toward zero; remainder takes the dividend's sign; `MIN % -1` is `0`; arithmetic never wraps (CORE_V1, INTERFACE_CONTRACTS).
 - Values are immutable with no observable identity; immutable storage may be shared via reference counting (CORE_V1, DELIVERY_POLICY).
 - `console::print(String) -> Unit` is the sole host adapter; no clock, randomness, environment, or network (CORE_V1, DELIVERY_POLICY).

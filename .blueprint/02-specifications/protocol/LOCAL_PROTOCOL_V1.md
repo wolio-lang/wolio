@@ -1,101 +1,205 @@
-`.blueprint/02-specifications/protocol/LOCAL_PROTOCOL_V1.md`
 # Local agent protocol V1
 
-M04 provides local JSON-lines over stdin/stdout; no HTTP server, remote auth,
-or network transport is included. The process runs under the invoking OS user.
-Mutation payloads are defined by `MUTATION_SCHEMA_V1.md`; tier and lifecycle
-rules are defined by `APPROVAL_MATRIX_V1.md`. This protocol constrains managed changes, not an agent with independent shell
-access. Untrusted code execution needs an OS sandbox; metadata is not a sandbox.
+This document is normative for M04. It defines the local JSON-lines agent communication
+protocol, autonomous mutation workflows, the Context Spine Generator, the Mechanical
+Auto-Prune pass, and MCTS-based state rollback repair, anchored in
+[ADR-010](../../01-architecture/decisions/ADR-010-vibe-native-zero-inspection-architecture.md).
 
-Request envelope: `protocol_version: 1`, unique string `request_id`, `method`,
-`base_snapshot`, and object `params`. Response repeats version/request_id and
-contains exactly one of `result` or `error` (code, message, diagnostics).
-Methods: inspect, impact, plan, apply, verify, finalize. Unknown versions/methods
-fail before mutation. Queries require the snapshot they describe.
+## 1. Transport and Execution Model
 
-Plan params contain intent, operation array, allowed symbol/path scope, and
-requested capabilities. Operations are create_declaration, replace_implementation,
-replace_contract, rename_symbol, move_symbol, add_test, delete_symbol. Each carries
-target ID (except create), expected old hash, and typed payload. Payloads encode
-V1 AST nodes using tagged JSON objects; implementation bodies and predicates are
-AST expressions, never raw source strings. String literal values and intent
-strings remain ordinary data. The schema covers CORE_V1 productions only and
-rejects unknown tags/fields, raw source, byte offsets, patches and arbitrary file
-replacement. Parse/type checks still apply to emitted source. The mutation
-engine renders canonical source from the validated AST and preserves unrelated
-source/comments. It must not invent requires/ensures or widen effect/dependency
-sets to make a plan pass. Missing lists retain CORE_V1's empty-set meaning.
-Creation rejects an occupied semantic key; rename/move returns old/new identity
-links and updates references as one scope-checked change. No high-level alias
-such as create_operation bypasses these checks; create_declaration with kind
-operation is the canonical V1 operation.
+`wolio-agent` provides local JSON-lines communication over standard input (`stdin`) and
+standard output (`stdout`). No HTTP server, remote authentication, or network transport
+is required in V1; the process executes under the invoking OS user account.
+Untrusted code execution requires an OS sandbox (e.g. Linux namespaces / seccomp / cgroups);
+protocol metadata is not an operating system sandbox.
 
-Plans return a plan ID, canonical AST diff hash, affected IDs, compatibility
-classes, approval tier, required approvals, and diagnostics. Tier is computed
-by the service from the complete diff and impact, never supplied by the agent:
+Mutation payloads are governed by `MUTATION_SCHEMA_V1.md`.
+Risk tier assignment and review lifecycles are governed by `APPROVAL_MATRIX_V1.md`.
 
-- `AUTO`: implementation/test edits or private declaration creation/deletion,
-  with no changed public interface, existing contract, error/effect/dependency
-  sets, capabilities, policy, security, schema or architecture boundary.
-- `POST_REVIEW`: changes to existing private contract syntax/intent only when
-  signatures, error/effect/dependency sets and normalized predicates are
-  identical, with no public contract impact. V1 cannot prove other predicate
-  refinements. Complete technical evidence is required before publication.
-- `HUMAN_REQUIRED`: all public interface/contract changes, other predicate
-  changes (`unknown` included), existing error/effect/dependency set changes,
-  package identity, capability/security, policy, schema and architecture-boundary
-  changes. This is also the fallback for unclassified changes. V1 does not
-  implement unsafe exceptions; approval cannot enable unsupported syntax.
+## 2. Request and Response Envelopes
 
-The highest tier across the plan wins. New private operations with nonempty
-error/effect/dependency sets require HUMAN_REQUIRED. Any affected definition
-rename/move is at least POST_REVIEW, and HUMAN_REQUIRED when public or when
-compatibility cannot be established. Tests may not authorize their own contract
-changes; removing tests cannot discharge required evidence. AUTO/POST_REVIEW
-never waive scope, checks or runtime guards. Deny overrides allow; default scope
-and capabilities are deny. Scope matches normalized
-project-relative paths and IDs; symlink escape and `..` traversal are rejected.
+Every message across the transport is a single UTF-8 JSON line.
 
-HUMAN_REQUIRED approval is a local owner-authored record outside agent-writable
-scope: approver,
-plan hash, base snapshot, capabilities, UTC expiry, and revocation state. It is
-valid for one application only, is not delegable, and expires after 24 hours at
-most. The project owner is the invoking repository maintainer; remote identity
-federation is outside V1. Agent cannot write its own approval records.
+### Request Envelope
+```json
+{
+  "protocol_version": 1,
+  "request_id": "req_01j7...",
+  "method": "plan",
+  "base_snapshot": "snap_sha256...",
+  "params": {}
+}
+```
 
-Apply stages changes in an isolated temporary workspace, validates scope both
-before and after, checks the current snapshot, runs verification, and acquires
-an exclusive project mutation lock before compare-and-swap publication. Changed
-base or approval returns WOLIO-STALE-001. A journal records old/new content hashes;
-crash recovery completes or restores the entire managed change before another
-mutation. Never discard unrelated user edits. External side effects are not
-rolled back by source rollback. Tests receive only explicitly granted execution
-capabilities. `verify` establishes technical evidence; `apply` publishes a
-verified authorized change; `finalize` binds evidence to the published snapshot.
-Finalization does not prove business intent or grant merge/release approval.
-AUTO/POST_REVIEW may finalize without synchronous human interaction when all
-required gates pass; not_run/fail or unknown required evidence blocks it.
-Runtime-checked contracts are reported as such, never as universal proof.
+- `protocol_version`: Positive integer (must be `1` for V1).
+- `request_id`: Non-empty unique string generated by the client.
+- `method`: One of `inspect`, `impact`, `plan`, `apply`, `verify`, `finalize`.
+- `base_snapshot`: SHA-256 hash of the exact project state on which the request operates.
+- `params`: Method-specific object payload.
 
-POST_REVIEW publication appends a durable review record (plan/diff hash,
-base/result snapshots, actor, affected IDs, evidence references, status pending)
-in the same recoverable transaction. Owner review appends accepted/rejected
-disposition tied to that record; agents cannot resolve their own review. Local
-query output exposes pending reviews for PR audit; GitHub/remote integration is
-not required in V1. Pending review does not block local execution/finalization.
-Rejection requires a new repair/revert plan against the current snapshot, never
-silent rollback over later work. Missing review record blocks POST_REVIEW
-publication, and failed finalization never creates successful evidence.
+### Response Envelope
+The response repeats `protocol_version` and `request_id`, containing exactly one of `result` or `error`:
 
-Repeated request IDs with identical payload replay the recorded result; changed
-payload with the same ID fails. Records are append-only JSONL under `.wolio-log/`
-(explicit project artifacts, not rebuildable cache). Secret values are excluded.
-Repair is another plan with the same constraints; default budget is 3 attempts,
-then report unresolved diagnostics. No suppression or automatic contract weakening.
+```json
+{
+  "protocol_version": 1,
+  "request_id": "req_01j7...",
+  "result": {}
+}
+```
+or
+```json
+{
+  "protocol_version": 1,
+  "request_id": "req_01j7...",
+  "error": {
+    "code": "WOLIO-SCOPE-001",
+    "message": "Human approval required for external capability escalation",
+    "diagnostics": []
+  }
+}
+```
 
-Acceptance: valid edit, stale edit, missing/expired/revoked approval, traversal,
-symlink escape, denied scope, failed verification, crash recovery, duplicate
-request, changed duplicate payload, and preservation of concurrent user edits.
-Also require tier precedence, normalized-private POST_REVIEW, unknown/public
-contract HUMAN_REQUIRED, raw-text rejection, no self-review, pending review
-recovery/replay and rejection followed by a new repair plan.
+Unknown protocol versions or unknown methods fail immediately before any mutation or staging.
+Queries require the exact base snapshot they describe.
+
+## 3. The Context Spine Generator (`.wolio/context-spine.json`)
+
+To systematically eliminate **Context Window Amnesia** and prevent AI "script akal-akalan"
+(orphan scripts, duplicate types, monkey patching) across multi-session workflows:
+
+### Specification and Generation
+- The Wolio compiler automatically extracts, compacts, and maintains a deterministic,
+  high-density architectural index at `.wolio/context-spine.json`.
+- **Target Budget:** Compact summary strictly budgeted to ≤ 2,000 tokens (canonical JSON format).
+- **Triggers:** Automatically refreshed on every successful compilation, verification,
+  `apply`, or via the query `method: "inspect", params: { "kind": "context_spine" }`.
+
+### Semantic Contents of the Context Spine
+1. **Nominal Domain Types & Refinements:** All closed nominal sum types, enum variants,
+   record definitions, and nominal refinement types (e.g., `PositiveInt`, `NonEmptyList<T>`).
+2. **Public Operations & Signatures:** Full exported function signatures, return types,
+   declared effect sets, error sets, and capability requirements.
+3. **Module Dependency Graph & Architecture Rules:** Complete directed module graph,
+   architectural layer boundaries (`[architecture]`), and permitted import edges.
+4. **Actor State-Machine Protocols:** Actor message envelope types, sequential mailbox
+   contracts, and supervision tree hierarchies (`OneForOne`, `AllForOne`).
+
+### Multi-Session Invariant
+In multi-session agent environments (e.g. Session 4, Session 10), the agent is instructed
+to ingest `.wolio/context-spine.json` instead of reading 50,000 lines of function bodies.
+The agent possesses 100% global architectural awareness of available types and helper
+operations. Creation of duplicate types, duplicate domain utilities, or unmapped orphan
+files is strictly prohibited and rejected by Tier 0 compiler validation (`WOLIO-MODULE-001`).
+
+## 4. Mechanical Auto-Prune Pass
+
+Under ADR-010 (Pillar 3), trivial hygiene errors must never stall the agent, trigger
+panic-induced workarounds, or reject a mutation plan:
+
+1. **Deterministic AST Rewrite:** Before staging verification, the compiler executes an
+   automated **Mechanical Auto-Prune Pass** over the planned AST.
+2. **Auto-Pruned Entities:**
+   - Unused dependencies listed in an operation's `dependencies [...]` clause.
+   - Unreferenced module imports (`import path::Symbol`).
+   - Dead private local bindings with no read side-effects.
+3. **Compilation Guarantee:** Formerly fatal under legacy `WOLIO-ANALYZER-003` and
+   `WOLIO-LINT-001`, these conditions are resolved deterministically by compiler AST
+   rewriting. The pruned AST is rendered into canonical form, staged, and verified.
+4. **Diagnostic Feedback:** The compiler reports pruned elements in the plan result under
+   `auto_pruned: [...]` as informational diagnostics, keeping the build clean without
+   failing the mutation or wasting LLM inference cycles.
+
+## 5. MCTS Search-Tree & State Rollback (Replacing 3-Attempt Abort)
+
+The legacy "3-attempt bounded linear abort" policy is permanently eliminated.
+Rigid attempt counters back agents into corners, forcing deceptive workarounds (`ensures true`,
+fake mock tables). In its place, Wolio establishes **MCTS Search-Tree Exploration and
+State Rollback**:
+
+### Exploration Search Tree
+- When resolving a task or repairing a failing verification gate, the agent explores
+  candidate AST mutations across a search tree.
+- Each candidate branch is staged in an isolated, temporary scratch workspace
+  (`.wolio/staging/<branch_id>`).
+- Candidates are evaluated against the full verification pipeline: syntax, typing,
+  refinement constraints, hermetic tests, and the Global Regression Gate.
+
+### Transactional State Rollback
+- If a candidate branch fails verification, introduces regressions in downstream modules,
+  or violates capability envelopes, the engine executes an immediate, transactional
+  **State Rollback** to the nearest valid parent branch or baseline snapshot.
+- Staging and rollback operations leave zero dirty state in the working directory,
+  zero untracked orphan files, and zero pollution in Git commit history.
+
+### Search Budget & Root-Cause Reporting
+- Search exploration is bounded by a configurable node exploration budget
+  (`max_exploration_nodes`, default 16 nodes; or search depth ceiling) rather than
+  a linear 3-attempt crash counter.
+- If all branches in the exploration tree fail, the compiler emits a structured
+  **Semantic Root-Cause Diagnostic Tree**, tracing the exact invariant failure paths
+  and cross-module dependencies to guide the agent's next high-level strategy.
+
+## 6. Plan Method and Risk-Tier Assignment
+
+### `plan` Execution Flow
+1. Receives `intent`, `operations`, `scope`, and requested `capabilities`.
+2. Validates symbol and path scope against project policies; checks for traversal (`..`)
+   and symlink escapes (`WOLIO-SCOPE-001`).
+3. Executes the Mechanical Auto-Prune pass on candidate AST diffs.
+4. Derives the deterministic risk tier from the semantic diff and transitive impact:
+   - `AUTO`: All internal evolutions within the pre-approved macro-capability envelope
+     (private declarations, internal operations, internal errors, internal effects,
+     private renames/moves, auto-pruning, hermetic tests).
+   - `POST_REVIEW`: Additive, non-breaking public declarations or architectural restructuring
+     within capability envelopes. Allows local execution; appends audit record in `.wolio-log/`.
+   - `HUMAN_REQUIRED`: External capability escalation (network/filesystem sandbox expansion),
+     breaking public API schema changes, or runtime/computational resource budget breaches.
+5. Returns `plan_id`, canonical AST diff hash, affected IDs, approval tier, and diagnostics.
+
+The agent cannot supply, request, or lower an approval tier. The service computes the tier
+deterministically from the AST diff according to `APPROVAL_MATRIX_V1.md`.
+
+## 7. Apply, Verify, and Finalize Lifecycle
+
+### Workspace Staging and Compare-and-Swap (CAS)
+1. `apply` stages the verified plan in an isolated temporary workspace.
+2. Acquires an exclusive project mutation lock (`.wolio/lock`).
+3. Validates that the current project snapshot matches `base_snapshot`. If the base has
+   changed concurrently, `apply` fails fast with `WOLIO-STALE-001`.
+4. If the plan is `HUMAN_REQUIRED`, verifies that an unexpired, unrevoked owner approval
+   record exists, matches the plan hash, base snapshot, and capability delta, and consumes it.
+5. Commits changes atomically to the workspace and journal. Crash recovery can cleanly
+   complete or restore the entire mutation. External side effects are not rolled back by
+   source rollback.
+
+### Verification and Finalization
+- `verify`: Runs the compiler, refinement type checker, adversarial property fuzzing,
+  and hermetic tests to produce cryptographic evidence.
+- `finalize`: Binds the complete technical verification evidence to the published snapshot.
+  Failed, missing, or `not_run` required evidence strictly blocks `finalize`.
+- `AUTO` and approved `HUMAN_REQUIRED` plans finalize without delay.
+- `POST_REVIEW` plans finalize and allow local build artifacts, while appending a durable
+  review ledger record. Release packaging (`wolio release`) remains gated until an owner
+  records `accepted`.
+
+## 8. Idempotency, Journaling, and Replay
+
+- Every request is logged in an append-only JSONL journal under `.wolio-log/`.
+- Re-sending a request with an identical `request_id` and payload returns the replayed
+  recorded result idempotently.
+- Sending a changed payload with an existing `request_id` fails fast with an explicit error.
+- Secret tokens and credentials are strictly redacted from journals and diagnostics.
+
+## 9. Acceptance Criteria
+
+Conformant implementations of `LOCAL_PROTOCOL_V1` must verify:
+1. Valid AST mutations via tagged JSON or canonical Wolio `code: string`.
+2. Rejection of raw text patches, regex edits, and out-of-scope path modifications.
+3. Automatic generation and query retrieval of `.wolio/context-spine.json` (≤ 2,000 tokens).
+4. Deterministic Mechanical Auto-Prune pass clearing unused dependencies/imports without failure.
+5. MCTS search-tree exploration with clean transactional state rollback on branch failure.
+6. Correct risk tier computation: `AUTO` for internal evolutions, `POST_REVIEW` for non-breaking
+   public additions, `HUMAN_REQUIRED` strictly for capability/schema/budget boundary breaches.
+7. Atomic CAS application, journal crash recovery, and duplicate replay handling.
+8. Blocking of release packaging when `POST_REVIEW` records are pending or rejected.

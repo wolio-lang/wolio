@@ -8,7 +8,7 @@
 | Depends on | T021 |
 | Blocks | T023 |
 | Acceptance families | SEM (builtin generics, matches, Result) |
-| Bounded areas | types (`crates/wolio-types`) |
+| Bounded areas | `crates/wolio-semantic` (types submodule) |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T022.md` |
 

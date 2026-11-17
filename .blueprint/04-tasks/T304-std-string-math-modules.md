@@ -8,7 +8,7 @@
 | Depends on | T303 |
 | Blocks | T305 |
 | Acceptance families | V3-STD (`std::string` and `std::math`) |
-| Bounded areas | `crates/wolio-resolver`, `crates/wolio-semantic`, `crates/wolio-types`, `crates/wolio-effects`, `crates/wolio-runtime`, `crates/wolio-codegen` |
+| Bounded areas | `crates/wolio-semantic` (submodules `resolver`, `types`, `effects`), `crates/wolio-runtime`, `crates/wolio-codegen` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T304.md` |
 
@@ -25,7 +25,7 @@ interpreter and native LLVM backend.
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V3-STD`, M13 row of [DELIVERY_PLAN.md](../06-project-management/DELIVERY_PLAN.md), [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **Explicit import & dependency rule (`crates/wolio-resolver`, `crates/wolio-effects`):**
+- **Explicit import & dependency rule (`crates/wolio-semantic::resolver`, `crates/wolio-semantic::effects`):**
   - Builtin `std::*` modules are never implicitly in scope. A module must declare `import std::string;` or `import std::math;` (failing with `WOLIO-RESOLVE-001` if referenced without import, or `WOLIO-FEATURE-001` if imported under `version = "1"` or `"2"`).
   - User modules cannot declare `module std` (`std` is a reserved keyword).
   - Every `operation` calling a `std::string::*` or `std::math::*` operation must list it in `dependencies [...]` (e.g., `dependencies [std::string::trim, std::math::clamp];`), or fail with `WOLIO-DEPENDENCY-001` (and unused entries fail with `WOLIO-ANALYZER-003`).

@@ -8,7 +8,7 @@
 | Depends on | T307 |
 | Blocks | T309 |
 | Acceptance families | V3-IO (`std::time`, `std::fs`, `std::net`, and `[capabilities]`) |
-| Bounded areas | `crates/wolio-resolver`, `crates/wolio-semantic`, `crates/wolio-types`, `crates/wolio-effects`, `crates/wolio-runtime`, `crates/wolio-codegen` |
+| Bounded areas | `crates/wolio-semantic` (submodules `resolver`, `types`, `effects`, `graph`), `crates/wolio-runtime`, `crates/wolio-codegen` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T308.md` |
 
@@ -23,12 +23,12 @@ in `wolio.toml` (`WOLIO-EFFECT-001` and `HUMAN_REQUIRED` approval tier).
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V3-IO`, M14 row of [DELIVERY_PLAN.md](../06-project-management/DELIVERY_PLAN.md), [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **`wolio.toml` `[capabilities]` policy (`crates/wolio-semantic`, `crates/wolio-effects`):**
+- **`wolio.toml` `[capabilities]` policy (`crates/wolio-semantic::graph`, `crates/wolio-semantic::effects`):**
   ```toml
   [capabilities]
-  allowed_effects = ["Console::Write", "Clock::Read", "Fs::Read", "Fs::Write", "Net::Http"]
+  allowed_effects = ["Console::Write", "Clock::Read", "Fs::Read", "Fs::Write", "Net::Http", "Foreign::Call"]
   ```
-  - Recognized effect identifiers in V3: `"Console::Write"`, `"Clock::Read"`, `"Fs::Read"`, `"Fs::Write"`, `"Net::Http"`, `"Db::Query"`, `"Db::Tx"`, `"Secret::Use"`.
+  - Recognized effect identifiers in V3: `"Console::Write"`, `"Clock::Read"`, `"Fs::Read"`, `"Fs::Write"`, `"Net::Http"`, `"Db::Query"`, `"Db::Tx"`, `"Secret::Use"`, `"Foreign::Call"`.
   - If `[capabilities]` is omitted in `wolio.toml`, `allowed_effects` defaults to `["Console::Write"]` (preserving 100% compatibility with V1/V2 console programs).
   - If any operation in the workspace declares an effect in `effects [...]` that is not present in `[capabilities].allowed_effects`, `wolio check` fails with `WOLIO-EFFECT-001` (`violation: { "observed": "<Effect>", "allowed_capabilities": [...] }`).
   - Normalized `[capabilities].allowed_effects` is hashed into the project policy snapshot hash (`wolio-semantic`), and any addition to `[capabilities]` requires `HUMAN_REQUIRED` approval.

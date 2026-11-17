@@ -11,6 +11,8 @@ states belong only to `.execution/task-status.md`.
 
 ## Part I — V1 Tasks (`M01`–`M07`, `[language] version = "1"`)
 
+Milestone summary: [V1-TASKS.md](V1-TASKS.md). Individual task contract files below are the sole normative authority.
+
 ### M01 — Frontend (entry: owner V1 baseline acceptance)
 
 | ID | Task file | Depends on | Acceptance |
@@ -48,7 +50,7 @@ states belong only to `.execution/task-status.md`.
 | T041 | [T041-typed-plans-ast-diffs.md](T041-typed-plans-ast-diffs.md) | T040 | AGENT plan/raw-text/ID mapping |
 | T042 | [T042-scope-approval-tiers.md](T042-scope-approval-tiers.md) | T041 | AGENT deny/traversal/tier/expiry/revocation |
 | T043 | [T043-transactional-apply-recovery.md](T043-transactional-apply-recovery.md) | T042 | AGENT crash/concurrent edits |
-| T044 | [T044-repair-finalize-review-analyzer.md](T044-repair-finalize-review-analyzer.md) | T043 | AGENT repair/review; ANALYZER `001`–`005`; all M04 |
+| T044 | [T044-repair-finalize-review-analyzer.md](T044-repair-finalize-review-analyzer.md) | T043 | AGENT repair/review/spine/auto-prune; ANALYZER; all M04 |
 
 ### M05 — Native (entry: M03, independent of M04)
 
@@ -82,6 +84,8 @@ states belong only to `.execution/task-status.md`.
 
 ## Part II — V2 Tasks (`M08`–`M11`, `[language] version = "2"`)
 
+Milestone summary: [V2-TASKS.md](V2-TASKS.md). Individual task contract files below are the sole normative authority.
+
 ### M08 — V1 Bug-Fix & Regression Gate (entry: V1 completion and owner V2 gate acceptance)
 
 | ID | Task file | Depends on | Acceptance |
@@ -95,9 +99,9 @@ states belong only to `.execution/task-status.md`.
 | ID | Task file | Depends on | Acceptance |
 |---|---|---|---|
 | T204 | [T204-v2-loop-predicate-parser.md](T204-v2-loop-predicate-parser.md) | T203 | V2-LOOP syntax |
-| T205 | [T205-uint-bytes-decimal-scalars.md](T205-uint-bytes-decimal-scalars.md) | T204 | V2-DATA scalars (`UInt`, `Bytes`, `Decimal`) |
+| T205 | [T205-uint-bytes-decimal-scalars.md](T205-uint-bytes-decimal-scalars.md) | T204 | V2-DATA scalars, exact math, bitwise (`UInt`, `Bytes`, `Decimal`, bitwise) |
 | T206 | [T206-bounded-for-loop-guards.md](T206-bounded-for-loop-guards.md) | T205 | V2-LOOP (`WOLIO-CONTRACT-005`/`006`) |
-| T207 | [T207-immutable-list-canonical-map.md](T207-immutable-list-canonical-map.md) | T206 | V2-DATA collections (`List<T>`, `Map<K,V>`) |
+| T207 | [T207-immutable-list-canonical-map.md](T207-immutable-list-canonical-map.md) | T206 | V2-DATA collections (`List<T>`, `Map<K,V>`, `Set<T>`) |
 | T208 | [T208-deterministic-typechecked-format.md](T208-deterministic-typechecked-format.md) | T207 | V2-DATA `format`; all M09 |
 
 ### M10 — Pure Predicates, Architecture Policy & Agent Protocol v2 (entry: M09)
@@ -122,6 +126,8 @@ states belong only to `.execution/task-status.md`.
 
 ## Part III — V3 Tasks (`M12`–`M15`, `[language] version = "3"`)
 
+Milestone summary: [V3-TASKS.md](V3-TASKS.md). Individual task contract files below are the sole normative authority.
+
 ### M12 — V2 Bug-Fix, Memory & Performance Gate (entry: V2 completion and owner V3 gate acceptance)
 
 | ID | Task file | Depends on | Acceptance |
@@ -139,20 +145,24 @@ states belong only to `.execution/task-status.md`.
 | T306 | [T306-opaque-secret-validation-provenance.md](T306-opaque-secret-validation-provenance.md) | T305 | V3-SECRET (`WOLIO-SECURITY-001`) |
 | T307 | [T307-std-crypto-module.md](T307-std-crypto-module.md) | T306 | V3-STD, V3-SECRET (`std::crypto`); all M13 |
 
-### M14 — Capability-Gated I/O, Deterministic Test Mocks & Transactions (entry: M13)
+### M14 — Capability-Gated I/O, Deterministic Test Mocks, Transactions & FFI (entry: M13)
 
 | ID | Task file | Depends on | Acceptance |
 |---|---|---|---|
 | T308 | [T308-capability-gated-time-fs-net.md](T308-capability-gated-time-fs-net.md) | T307 | V3-IO (`std::time`, `std::fs`, `std::net`, `[capabilities]`) |
 | T309 | [T309-hermetic-test-with-mock-sandbox.md](T309-hermetic-test-with-mock-sandbox.md) | T308 | V3-IO (`with_mock`, `WOLIO-EFFECT-002`) |
-| T310 | [T310-linear-resource-modifies-old-snapshots.md](T310-linear-resource-modifies-old-snapshots.md) | T309 | V3-TX (`resource`, `modifies`, `old(...)`, `WOLIO-RESOURCE-001`) |
-| T311 | [T311-atomic-transaction-rollback.md](T311-atomic-transaction-rollback.md) | T310 | V3-TX (`transaction` rollback); all M14 |
+| T310 | [T310-linear-resource-modifies-old-snapshots.md](T310-linear-resource-modifies-old-snapshots.md) | T309 | V3-TX (`resource` acquisition, `modifies`, `old(...)`, `WOLIO-RESOURCE-001`) |
+| T311 | [T311-atomic-transaction-rollback.md](T311-atomic-transaction-rollback.md) | T310 | V3-TX (`transaction` rollback) |
+| T316 | [T316-foreign-declarations-manifest-validation.md](T316-foreign-declarations-manifest-validation.md) | T311 | V3-FFI (`foreign` syntax & manifest validation `WOLIO-FOREIGN-001`) |
+| T317 | [T317-foreign-type-check-fixed-width-integers.md](T317-foreign-type-check-fixed-width-integers.md) | T316 | V3-FFI, V3-DATA (`foreign type` storage `WOLIO-FOREIGN-002` & `UInt8`..`Int32`) |
+| T318 | [T318-foreign-contract-boundary-marshalling.md](T318-foreign-contract-boundary-marshalling.md) | T317 | V3-FFI (foreign contract boundary & error marshalling) |
+| T319 | [T319-foreign-llvm-lowering-with-mock.md](T319-foreign-llvm-lowering-with-mock.md) | T318 | V3-FFI, NATIVE (foreign LLVM lowering & `with_mock` sandbox); all M14 |
 
 ### M15 — Contract Property Fuzzing, Agent Protocol v3 & Industrial Release (entry: M14)
 
 | ID | Task file | Depends on | Acceptance |
 |---|---|---|---|
-| T312 | [T312-property-fuzz-shrinking-verifier.md](T312-property-fuzz-shrinking-verifier.md) | T311 | V3-FUZZ (`property`, `wolio verify --fuzz`, `WOLIO-FUZZ-001`) |
+| T312 | [T312-property-fuzz-shrinking-verifier.md](T312-property-fuzz-shrinking-verifier.md) | T319 | V3-FUZZ (`property`, `wolio verify --fuzz`, `WOLIO-FUZZ-001`) |
 | T313 | [T313-agent-protocol-v3-mutations.md](T313-agent-protocol-v3-mutations.md) | T312 | V3-FUZZ, AGENT (`protocol_version: 3`) |
 | T314 | [T314-v3-ir-llvm-formatter-lsp-parity.md](T314-v3-ir-llvm-formatter-lsp-parity.md) | T313 | V3-RELEASE, NATIVE, TOOL |
-| T315 | [T315-v3-industrial-benchmark-release.md](T315-v3-industrial-benchmark-release.md) | T314 | V3-RELEASE, BENCH (W01–W15); all M15 |
+| T315 | [T315-v3-industrial-benchmark-release.md](T315-v3-industrial-benchmark-release.md) | T314 | V3-RELEASE, BENCH (W01–W16); all M15 |

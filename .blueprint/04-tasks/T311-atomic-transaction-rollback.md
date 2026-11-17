@@ -6,17 +6,16 @@
 | Milestone | `M14` |
 | Priority | `P0` |
 | Depends on | T310 |
-| Blocks | T312 (M15 entry) |
-| Acceptance families | V3-TX (`transaction` rollback); completes M14 |
-| Bounded areas | `crates/wolio-ast`, `crates/wolio-parser`, `crates/wolio-types`, `crates/wolio-runtime`, `crates/wolio-verify` |
+| Blocks | T316 |
+| Acceptance families | V3-TX (`transaction` rollback) |
+| Bounded areas | `crates/wolio-ast`, `crates/wolio-parser`, `crates/wolio-semantic` (submodules `types`, `effects`), `crates/wolio-runtime`, `crates/wolio-verify` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T311.md` |
 
 ## Objective
 Implement `transaction (handle) { ... }` blocks with automatic pre-transaction
 state checkpointing, atomic rollback on `Result::Err` return or runtime fault,
-and error-branch `ensures` postcondition verification (Taxonomy `W10`),
-completing milestone M14.
+and error-branch `ensures` postcondition verification (Taxonomy `W10`).
 
 ## Authority
 - Normative: [CORE_V3.md](../02-specifications/language/CORE_V3.md) (Section 5: Stateful resource handles and `transaction` blocks), [AI_BUG_TAXONOMY.md](../06-project-management/AI_BUG_TAXONOMY.md) (`W10`)
@@ -36,7 +35,7 @@ completing milestone M14.
       pub body: Box<Expr>,
   }
   ```
-- **Static typing & frame rules (`crates/wolio-types`, `crates/wolio-effects`):**
+- **Static typing & frame rules (`crates/wolio-semantic::types`, `crates/wolio-semantic::effects`):**
   - `handle` must resolve to an in-scope `resource <Type>` parameter declared in the enclosing operation's `modifies [handle]` list (`WOLIO-RESOURCE-001` otherwise).
   - The enclosing operation must declare `effects [Db::Tx]` (or the resource's transactional effect; `WOLIO-EFFECT-001` otherwise).
   - The trailing `body` expression of `transaction (handle) { ... }` must have type `Result<T, E>` (`WOLIO-TYPE-001` otherwise), which is also the type of the `transaction` expression itself.
@@ -74,7 +73,7 @@ Rejection and failure:
 - [ ] `transaction (x)` where `x` is not a `resource` in `modifies [x]` fails with `WOLIO-RESOURCE-001`, and a non-`Result` body fails with `WOLIO-TYPE-001`
 
 Completion:
-- [ ] All M14 `DELIVERY_PLAN` and `ACCEPTANCE_MATRIX` (`V3-IO`, `V3-TX`) gates pass
+- [ ] Transaction rollback fixtures pass across interpreter and native runtime
 - [ ] Common gates in EXECUTION_CONTRACTS pass; no unrelated changes
 - [ ] Report written in `.execution/reports/T311.md`
 
@@ -84,9 +83,10 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
-Evidence: `.execution/reports/T311.md` with `V3-TX` fault-injected transaction rollback fixtures and M14 gate completion summary.
+Evidence: `.execution/reports/T311.md` with `V3-TX` fault-injected transaction rollback fixtures.
 
 ## Dependencies and open items
-- Depends on: T310; blocks: T312 (and therefore M15).
+- Depends on: T310; blocks: T316.
 - Open: none.
+
 

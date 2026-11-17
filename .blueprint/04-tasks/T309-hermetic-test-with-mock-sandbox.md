@@ -8,15 +8,15 @@
 | Depends on | T308 |
 | Blocks | T310 |
 | Acceptance families | V3-IO (`with_mock` and `WOLIO-EFFECT-002`) |
-| Bounded areas | `crates/wolio-lexer`, `crates/wolio-ast`, `crates/wolio-parser`, `crates/wolio-types`, `crates/wolio-effects`, `crates/wolio-verify`, `crates/wolio-runtime` |
+| Bounded areas | `crates/wolio-lexer`, `crates/wolio-ast`, `crates/wolio-parser`, `crates/wolio-semantic` (submodules `types`, `effects`), `crates/wolio-verify`, `crates/wolio-runtime` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T309.md` |
 
 ## Objective
 Implement `with_mock { <effect_op> => <pure_handler>, ... } in { <body> }` and
 enforce a hermetic test and property sandbox that rejects any unmocked
-non-console external I/O effect (`Clock::Read`, `Fs::*`, `Net::*`, `Db::*`) in
-`wolio test` and `wolio verify` with `WOLIO-EFFECT-002` (Taxonomy `W13`).
+non-console external I/O or foreign effect (`Clock::Read`, `Fs::*`, `Net::*`, `Db::*`,
+`Foreign::Call`) in `wolio test` and `wolio verify` with `WOLIO-EFFECT-002` (Taxonomy `W13`).
 
 ## Authority
 - Normative: [CORE_V3.md](../02-specifications/language/CORE_V3.md) (Section 4: Mandatory deterministic test mocks), [EVIDENCE_MODEL.md](../02-specifications/verification/EVIDENCE_MODEL.md), [AI_BUG_TAXONOMY.md](../06-project-management/AI_BUG_TAXONOMY.md) (`W13`)
@@ -46,11 +46,11 @@ non-console external I/O effect (`Clock::Read`, `Fs::*`, `Net::*`, `Db::*`) in
       pub body: Box<Expr>,
   }
   ```
-- **Static typing and sandbox rules (`crates/wolio-types`, `crates/wolio-effects`):**
+- **Static typing and sandbox rules (`crates/wolio-semantic::types`, `crates/wolio-semantic::effects`):**
   - `with_mock` is permitted **only** inside `test` and `property` declarations; using `with_mock` inside a production `operation` or `predicate` fails with `WOLIO-EFFECT-002`.
-  - Each `target_op` in `handlers` must resolve to an effectful operation (such as `std::time::now`, `std::fs::read_text`, `std::fs::write_text`, `std::net::http_send`, or a user operation declaring `Db::*` / external effects), and its parameter types and return type must exactly match `target_op` (`WOLIO-TYPE-001`). Duplicate `target_op` entries in the same `with_mock` block fail with `WOLIO-SYNTAX-001` / `WOLIO-RESOLVE-001`.
+  - Each `target_op` in `handlers` must resolve to an effectful operation (such as `std::time::now`, `std::fs::read_text`, `std::fs::write_text`, `std::net::http_send`, a foreign operation, or a user operation declaring `Db::*` / external effects), and its parameter types and return type must exactly match `target_op` (`WOLIO-TYPE-001`). Duplicate `target_op` entries in the same `with_mock` block fail with `WOLIO-SYNTAX-001` / `WOLIO-RESOLVE-001`.
   - Each mock handler body must be pure (`effects []`, no operation calls with external effects; `WOLIO-EFFECT-002` otherwise).
-  - Inside a `test` or `property` declaration, every call to an operation `Op` whose transitive effects include any effect in `{Clock::Read, Fs::Read, Fs::Write, Net::Http, Db::Query, Db::Tx}` must be dynamically and statically covered by enclosing `with_mock` handlers for all leaf external operations producing those effects. Any uncovered external effect in a `test` or `property` fails static checking (`wolio check` / `wolio test` / `wolio verify`) with `WOLIO-EFFECT-002`.
+  - Inside a `test` or `property` declaration, every call to an operation `Op` whose transitive effects include any effect in `{Clock::Read, Fs::Read, Fs::Write, Net::Http, Db::Query, Db::Tx, Foreign::Call}` must be dynamically and statically covered by enclosing `with_mock` handlers for all leaf external operations producing those effects. Any uncovered external effect in a `test` or `property` fails static checking (`wolio check` / `wolio test` / `wolio verify`) with `WOLIO-EFFECT-002`.
 - **Runtime dispatch (`crates/wolio-runtime`):**
   - `wolio-runtime` maintains a scoped mock handler stack during `test` and `property` evaluation. When a mocked operation is invoked, the runtime evaluates its `requires` guard, executes the pure mock handler instead of the live host adapter, and evaluates the operation's `ensures` guard on the mocked return value.
   - As a defense-in-depth runtime guard, the live host adapters (`std::time::now`, `std::fs::*`, `std::net::*`) check `ExecutionMode::TestSandbox` and immediately abort with `WOLIO-EFFECT-002` if ever reached without a mock handler.

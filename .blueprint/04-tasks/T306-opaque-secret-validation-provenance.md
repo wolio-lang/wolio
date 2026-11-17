@@ -8,7 +8,7 @@
 | Depends on | T305 |
 | Blocks | T307 |
 | Acceptance families | V3-SECRET |
-| Bounded areas | `crates/wolio-diagnostics`, `crates/wolio-types`, `crates/wolio-effects`, `crates/wolio-analyzer`, `crates/wolio-runtime` |
+| Bounded areas | `crates/wolio-diagnostics`, `crates/wolio-semantic` (submodules `types`, `effects`, `analyzer`), `crates/wolio-runtime` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T306.md` |
 
@@ -24,15 +24,15 @@ Taxonomy `W11`).
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V3-SECRET`, M13 row of [DELIVERY_PLAN.md](../06-project-management/DELIVERY_PLAN.md), [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **Opaque `Secret<T>` typing rules (`crates/wolio-types`):**
+- **Opaque `Secret<T>` typing rules (`crates/wolio-semantic::types`):**
   - `Secret<T>` accepts only `T = String` or `T = Bytes` (any other type argument fails with `WOLIO-TYPE-001`).
   - `Secret<T>` has **no** `.value` field, **no** `==` or `!=` equality operator, and **no** ordering operator (`WOLIO-SECURITY-001`).
-- **Forbidden sinks and construction (`crates/wolio-effects`, `crates/wolio-analyzer`):**
+- **Forbidden sinks and construction (`crates/wolio-semantic::effects`, `crates/wolio-semantic::analyzer`):**
   1. **No production literal construction (`WOLIO-SECURITY-001`):** Calling `Secret(...)` or `Secret::for_test(...)` inside a production `operation` or `predicate` fails with `WOLIO-SECURITY-001`. Production code may only obtain `Secret<T>` from `std::env::read_secret(key: String) -> Result<Secret<String>, EnvError>` (or `Secret<Bytes>` via `std::secret::to_bytes(Secret<String>) -> Secret<Bytes>`, requiring `effects [Secret::Use]`). `Secret::for_test(val)` is permitted only inside `test` and `property` declarations.
   2. **No leakage to logging, formatting, or serialization sinks (`WOLIO-SECURITY-001`):** Passing `Secret<T>`—or any `record`, `enum`, `Option`, `Result`, `List`, or `Map` transitively containing a `Secret<T>` field—to `console::print`, `format(...)`, `std::json::stringify`, `std::fs::write_text`, or returning `Secret<T>` from `[entrypoint]` fails with `WOLIO-SECURITY-001`.
   3. **Authorized `Secret::Use` sinks:** Only operations declaring `effects [Secret::Use]` (such as `std::crypto::hmac_sha256`) may consume a `Secret<T>` parameter.
 - **External input validation provenance (`WOLIO-SECURITY-001`):**
-  - Values extracted from external untrusted sources (`std::json::parse`, `std::fs::read_text`, `std::net::http_send`) are tagged with `Provenance::Untrusted` in `wolio-effects`.
+  - Values extracted from external untrusted sources (`std::json::parse`, `std::fs::read_text`, `std::net::http_send`) are tagged with `Provenance::Untrusted` in `wolio-semantic::effects`.
   - Wrapping an `Untrusted` value in a domain nominal constructor `DomainType(raw)` inside an operation is rejected with `WOLIO-SECURITY-001` unless that operation's `ensures` clause establishes a validating `predicate` over the returned `DomainType` (e.g., `ensures match (result) { Result::Ok(id) => ValidAccountId(id), Result::Err(_) => true };`).
 - **Runtime and diagnostic redaction (`crates/wolio-runtime`, `crates/wolio-diagnostics`):**
   - `Value::SecretString` and `Value::SecretBytes` render as `"<REDACTED:Secret>"` in `Debug`, `Display`, diagnostic violation snapshots, and `.wolio-log/` records, and overwrite their buffer bytes with `0u8` on `Drop`.

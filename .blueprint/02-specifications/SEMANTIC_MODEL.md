@@ -45,7 +45,10 @@ index. Changes produce new clause identities, retaining old/new links in diffs.
 
 Types are interned semantic nodes, not text aliases. Builtin type applications
 include their arguments in identity; nominal identity uses declaration ID.
-There is no ownership/concurrency model in immutable, sequential V1.
+In accordance with [ADR-009](../01-architecture/decisions/ADR-009-unconventional-paradigm-unification.md),
+Wolio eliminates shared-memory concurrency, threads, and async/await across all versions.
+Operations declaring dependencies form a deterministic Directed Acyclic Graph (DAG) for
+compiler-managed dataflow parallelism, with immutable sequential evaluation in V1.
 
 ## Determinism and provenance
 

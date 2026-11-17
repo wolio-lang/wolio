@@ -8,7 +8,7 @@
 | Depends on | T024 |
 | Blocks | T031 |
 | Acceptance families | CONTRACT |
-| Bounded areas | contracts (`crates/wolio-contracts`), interpreter/runtime |
+| Bounded areas | `crates/wolio-semantic` (contracts submodule), runtime (`crates/wolio-runtime`) |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T030.md` |
 

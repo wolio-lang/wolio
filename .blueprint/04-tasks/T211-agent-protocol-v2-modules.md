@@ -53,7 +53,7 @@ Out of scope (owner):
 - V2 anti-workaround analyzer checks on loops and constant folding (T212).
 
 ## Normative requirements
-- `protocol_version: 2` adds `create_module`, `delete_module`, `add_import`, and `remove_import` and encodes `for`, `predicate`, `format`, and V2 types as structured AST objects—never raw source strings or text patches (CORE_V2, MUTATION_SCHEMA_V1).
+- `protocol_version: 2` adds `create_module`, `delete_module`, `add_import`, and `remove_import`, and encodes `for`, `predicate`, `format`, and V2 types either as structured AST objects or as canonical Wolio code snippet strings (`code: string`) parsed server-side into verified AST diffs—never arbitrary unstructured file patches or regex edits (CORE_V2, MUTATION_SCHEMA_V1).
 - Scope validation checks `scope.paths` and `scope.symbols` before and after staging; path traversal (`..`), paths outside `src/`/`tests/`, and symlink escapes fail with `WOLIO-SCOPE-001` (LOCAL_PROTOCOL_V1).
 - Crash recovery journal in `.wolio-log/` atomically rolls back or completes file creation/deletion for `create_module` and `delete_module` (LOCAL_PROTOCOL_V1).
 

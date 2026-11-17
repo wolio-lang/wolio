@@ -14,9 +14,11 @@
 
 ## Objective
 Lower all `CORE_V3` constructs (`std::*`, `Secret<T>`, `resource`, `modifies`,
-`old(expr)` snapshots, and `transaction` rollback regions) to `VerifiedWolioIr`
-and native LLVM codegen with 100% differential parity against the interpreter,
-and complete canonical `wolio fmt` and `wolio lsp` support for all V3 syntax.
+`old(expr)` snapshots, `transaction` rollback regions, `foreign` types and operations,
+and fixed-width integers `UInt8`..`UInt32`, `Int8`..`Int32`) to `VerifiedWolioIr`
+and native textual LLVM IR codegen (`.ll`) with 100% differential parity against
+the interpreter, and complete canonical `wolio fmt` and `wolio lsp` support for
+all V3 syntax.
 
 ## Authority
 - Normative: [DELIVERY_POLICY.md](../03-implementation/DELIVERY_POLICY.md) (Section 2 & Section 4), [CORE_V3.md](../02-specifications/language/CORE_V3.md), [EVIDENCE_MODEL.md](../02-specifications/verification/EVIDENCE_MODEL.md)
@@ -25,17 +27,19 @@ and complete canonical `wolio fmt` and `wolio lsp` support for all V3 syntax.
 
 ## Self-contained implementation context
 - **Typed IR & `VerifiedWolioIr` verifier extensions (`crates/wolio-ir`):**
-  - Add `IrType::SecretPtr` and `IrType::ResourcePtr(TypeId)`.
+  - Add `IrType::SecretPtr`, `IrType::ResourcePtr(TypeId)`, `IrType::ForeignPtr(TypeId)`, and fixed-width integer types (`IrType::UInt8`, `UInt16`, `UInt32`, `Int8`, `Int16`, `Int32`).
   - Add `IrInst::CaptureOld { slot: u32, expr_fn: IrFuncId, args: Vec<IrValue> }` emitted in the operation entry block immediately after `requires` guards and before any body instructions, and `IrInst::ReadOld { slot: u32 }` permitted only inside `ensures` guard blocks.
   - Add structured `TransactionRegion { handle: IrValue, begin_block, body_block, commit_block, rollback_block, merge_block }`:
     - `wolio_ir::verify_ir` verifies that every `Result::Err` edge and every fault unwind edge inside a `TransactionRegion` routes through `rollback_block` (`wolio_rt_tx_rollback`) before reaching `ensures` evaluation or exiting the operation, and every `Result::Ok` edge routes through `commit_block` (`wolio_rt_tx_commit`).
 - **Native LLVM Codegen & Runtime ABI (`crates/wolio-codegen`, `crates/wolio-runtime`):**
-  - Link all `wolio_rt_std_string_*`, `wolio_rt_std_math_*`, `wolio_rt_std_collections_*`, `wolio_rt_std_json_*`, `wolio_rt_std_crypto_*`, `wolio_rt_std_time_*`, `wolio_rt_std_fs_*`, `wolio_rt_std_net_*`, `wolio_rt_secret_*`, and `wolio_rt_tx_begin`/`commit`/`rollback` C ABI symbols into native builds (`wolio build`).
+  - Lower fixed-width integer types natively to LLVM `i8`, `i16`, `i32` with checked arithmetic intrinsics.
+  - Emit textual LLVM IR (`.ll`) declaring extern C symbols for foreign operations with contract assertions and auto-drop destructors for foreign types, linking via pinned `clang`.
+  - Link all `wolio_rt_std_*`, `wolio_rt_secret_*`, and `wolio_rt_tx_*` C ABI symbols into native builds (`wolio build`).
   - Keep all `requires`, `ensures` (including `old(...)`), `bound`, `invariant`, and transaction rollback guards active in release-optimized builds.
 - **Canonical Formatter (`crates/wolio-format`):**
-  - Format `import std::<module>;`, `pub resource <Name>;`, `modifies [h1, h2];`, `old(expr)`, `transaction (handle) { ... }`, `with_mock { ... } in { ... }`, and `property <name> for <op>(...) { where ...; ... }` with 4-space indentation, LF newlines, `//` comment preservation, and post-format `sym_` ID invariance check.
+  - Format `import std::<module>;`, `pub resource <Name>;`, `foreign type <Name> from "<lib>";`, `foreign operation <Name>(...) from "<lib>" { ... }`, fixed-width integers, `modifies [h1, h2];`, `old(expr)`, `transaction (handle) { ... }`, `with_mock { ... } in { ... }`, and `property <name> for <op>(...) { where ...; ... }` with 4-space indentation, LF newlines, `//` comment preservation, and post-format `sym_` ID invariance check.
 - **Language Server (`crates/wolio-lsp`):**
-  - Hover, go-to-definition, find-references, real-time diagnostics (`WOLIO-SECURITY-001`, `WOLIO-EFFECT-002`, `WOLIO-RESOURCE-001`), and version-checked rename for `std::*` imports/calls, `property` declarations, `resource` parameters, `modifies` references, `old(...)`, and `with_mock` handlers.
+  - Hover, go-to-definition, find-references, real-time diagnostics (`WOLIO-SECURITY-001`, `WOLIO-EFFECT-002`, `WOLIO-RESOURCE-001`, `WOLIO-FOREIGN-001`, `WOLIO-FOREIGN-002`), and version-checked rename for `std::*` imports/calls, `foreign` types and operations, fixed-width integers, `property` declarations, `resource` parameters, `modifies` references, `old(...)`, and `with_mock` handlers.
 
 ## Scope
 In scope:
@@ -44,7 +48,7 @@ In scope:
 - Updating `wolio-format` and `wolio-lsp` for all `CORE_V3` syntax.
 
 Out of scope (owner):
-- Full W01–W15 comparative industrial benchmark and V3 release packaging (T315).
+- Full W01–W16 comparative industrial benchmark and V3 release packaging (T315).
 
 ## Normative requirements
 - `VerifiedWolioIr` rejects any `ReadOld` instruction outside an `ensures` guard block or any `TransactionRegion` that can exit on `Err`/fault without executing `rollback_block` (DELIVERY_POLICY, IMPLEMENTATION_SPECIFICATION_V3).

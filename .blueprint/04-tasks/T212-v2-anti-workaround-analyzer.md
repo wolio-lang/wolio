@@ -8,12 +8,12 @@
 | Depends on | T211 |
 | Blocks | T213 (M11 entry) |
 | Acceptance families | V2-AGENT, ANALYZER; completes M10 |
-| Bounded areas | `crates/wolio-analyzer`, `crates/wolio-verify` |
+| Bounded areas | `crates/wolio-semantic` (submodule `analyzer`), `crates/wolio-verify` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T212.md` |
 
 ## Objective
-Harden `crates/wolio-analyzer` for `CORE_V2` so AI agents cannot bypass bounded
+Harden `crates/wolio-semantic::analyzer` for `CORE_V2` so AI agents cannot bypass bounded
 loop verification with tautological invariants (`invariant true;`), hide
 forbidden constants inside `Decimal`/`UInt`/`format(...)` expressions, or
 declare vacuous `predicate` bodies, completing M10.
@@ -25,7 +25,7 @@ declare vacuous `predicate` bodies, completing M10.
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `V2-AGENT` and `ANALYZER`, M10 row of [DELIVERY_PLAN.md](../06-project-management/DELIVERY_PLAN.md), [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
-- **V2 Analyzer Extensions (`crates/wolio-analyzer`):**
+- **V2 Analyzer Extensions (`crates/wolio-semantic::analyzer`):**
   1. **`WOLIO-ANALYZER-001` (Tautological Loop Invariant / Predicate Bypass — `error`):**
      - Reject any `for` loop in a production `implementation` whose `invariant` expression is literal `true`, constant-folds to `true` (e.g., `1 == 1`), or does not reference the accumulator binding `acc` (directly or as an argument to a `predicate` call). This prevents an AI agent from writing `invariant true;` merely to satisfy the parser syntax requirement.
      - Reject any `predicate` declaration whose body is literal `true` or constant-folds to a constant `Bool` without referencing all of its declared parameters.

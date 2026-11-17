@@ -35,7 +35,7 @@ In scope:
   loops, repair attempts, hidden-test verdicts, `AI_BUG_TAXONOMY` tags).
 
 Out of scope (owner):
-- Executing the full 24 × 10 paired benchmark campaign (T062); statistical
+- Executing the 10 × 5 paired benchmark campaign (T062); statistical
   bootstrap analysis and final evaluation report (T063).
 
 ## Normative requirements

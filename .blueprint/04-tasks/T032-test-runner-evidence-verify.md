@@ -31,6 +31,8 @@ In scope:
 - Obligation evidence records (`static`, `runtime_guard`, `test`, `review`;
   `pass`, `fail`, `not_run`, `unknown`) bound to snapshot/declaration hashes.
 - `wolio test` and `wolio verify` CLI commands in human and `--json` modes.
+- Automated scalar boundary and property fuzzing mode (`wolio verify --fuzz`) to
+  proactively defeat AI test-overfitting and hardcoded shortcuts on scalar operations.
 
 Out of scope (owner):
 - `inspect` and `impact` CLI commands and compatibility comparison (T033).
@@ -54,17 +56,23 @@ Out of scope (owner):
   to exact source, manifest, lockfile, compiler and policy hashes. Any changed
   input or delete/recreate incarnation invalidates prior evidence
   (CONTRACT_DESIGN, SEMANTIC_MODEL, EVIDENCE_MODEL).
+- `wolio verify --fuzz` exercises contract-guarded operations against scalar
+  boundary values (`Int::MIN`, `Int::MAX`, `-1`, `0`, `1`, inequality bounds) and
+  seeded deterministic fuzz samples satisfying `requires`; postcondition breaches
+  or runtime faults fail with `WOLIO-VERIFY-002` (DIAGNOSTIC_SPEC).
 
 ## Acceptance criteria
 Positive and boundary:
 - [ ] `wolio test` and `wolio verify` execute tests in deterministic module/name order
 - [ ] Evidence distinguishes `static`, `runtime_guard`, `test` and `review` methods and `pass`/`fail`/`not_run`/`unknown` statuses
 - [ ] Evidence is bound to `(symbol, declaration_hash, snapshot_hash)` and tool version
+- [ ] `wolio verify --fuzz` passes for correct contract-bounded scalar operations
 
 Rejection and failure:
 - [ ] Any source, manifest, lockfile or policy edit — or delete/recreate at the same semantic key — invalidates old evidence
 - [ ] Missing required boundary or reachable declared-error test coverage fails `verify`
 - [ ] False test results and runtime or contract faults inside tests fail with exit code 1 and structured diagnostics
+- [ ] Under `wolio verify --fuzz`, an operation violating `ensures` on boundary/fuzz inputs fails with `WOLIO-VERIFY-002`
 
 Completion:
 - [ ] Common gates in EXECUTION_CONTRACTS pass

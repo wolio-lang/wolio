@@ -8,7 +8,7 @@
 | Depends on | T020 |
 | Blocks | T022 |
 | Acceptance families | SEM (constructors, types) |
-| Bounded areas | `crates/wolio-types`, semantic |
+| Bounded areas | `crates/wolio-semantic` (types submodule), semantic support |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T021.md` |
 
@@ -18,7 +18,7 @@ nominal, record, enum, operators, lets, blocks, branches and operation calls —
 rejecting mismatches with structured diagnostics.
 
 ## Authority
-- Normative: [CORE_V1.md](../02-specifications/language/CORE_V1.md) (types and values), [SEMANTIC_MODEL.md](../02-specifications/SEMANTIC_MODEL.md) (interned types), [EVIDENCE_MODEL.md](../02-specifications/verification/EVIDENCE_MODEL.md) (code registry)
+- Normative: [CORE_V1.md](../02-specifications/language/CORE_V1.md) (types and values, Zero-Unsafe Invariant), [DIAGNOSTIC_SPEC.md](../02-specifications/verification/DIAGNOSTIC_SPEC.md) (Tier 1 `TYPE_RESOLUTION` and Tier 5 `WOLIO-LINT-006`), [SEMANTIC_MODEL.md](../02-specifications/SEMANTIC_MODEL.md) (interned types), [EVIDENCE_MODEL.md](../02-specifications/verification/EVIDENCE_MODEL.md) (code registry)
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `SEM`, [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 - Implementation layout: [IMPLEMENTATION_SPECIFICATION_V1.md](../03-implementation/IMPLEMENTATION_SPECIFICATION_V1.md)
 
@@ -44,6 +44,10 @@ Out of scope (owner):
   implicit conversions, truthiness, null, float or string concatenation (CORE_V1).
 - Lets are immutable; a block's final expression is its result; branch results
   must have the same type. Operation signatures are explicit (CORE_V1).
+- **Statement expression `Unit`-only rule:** A statement expression (`expr;`)
+  inside a block is permitted only if `expr` has type `Unit`. Discarding any
+  non-`Unit` expression without binding is a type error (`WOLIO-TYPE-001`) and
+  lint error (`WOLIO-LINT-006`) (CORE_V1, DIAGNOSTIC_SPEC).
 - Types are interned semantic nodes, not text aliases; nominal identity is the
   declaration, not its name text (SEMANTIC_MODEL).
 - Incompatible types use `WOLIO-TYPE-001` (EVIDENCE_MODEL).
@@ -61,6 +65,7 @@ Rejection and failure:
 - [ ] Bad call arity and argument types
 - [ ] Recursive value-type declarations
 - [ ] Non-Bool conditions, mismatched branches, implicit conversions
+- [ ] Non-`Unit` statement expression (`expr;`) discarding a value is rejected with `WOLIO-TYPE-001` / `WOLIO-LINT-006`
 
 Completion:
 - [ ] Common gates in EXECUTION_CONTRACTS pass

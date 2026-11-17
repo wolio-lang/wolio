@@ -27,8 +27,8 @@ and reusable predicates (`W08`), and multi-module `[architecture]` boundaries
 - **Corpus structure (`benchmarks/v2/`):**
   - 24 tasks divided across four 6-task strata:
     1. **Stratum A (6 tasks — Bounded Iteration & Accumulators, `W07`):** Aggregation, filtering, windowing, and range folding where off-by-one or infinite loop bugs commonly occur.
-    2. **Stratum B (6 tasks — Immutable Collections `List<T>` & `Map<K, V>`, `W06`/`W07`):** Canonical-order key aggregation, deduplication, lookup joins, and inventory reconciliation.
-    3. **Stratum C (6 tasks — Exact Financial `Decimal` & Reusable `predicate`s, `W08`):** Multi-tier tax, fee splitting, invoice reconciliation, and basis-point rounding rejection where IEEE-754 float drift fails hidden tests.
+    2. **Stratum B (6 tasks — Immutable Collections `List<T>` & `Map<K, V>` with Turbofish, `W06`/`W07`):** Canonical-order key aggregation, deduplication, lookup joins, and inventory reconciliation.
+    3. **Stratum C (6 tasks — Exact Financial `Decimal` with Explicit `RoundingMode` & Reusable `predicate`s, `W08`):** Multi-tier tax, fee splitting, invoice reconciliation, and basis-point rounding where IEEE-754 float drift or silent truncation fails hidden tests.
     4. **Stratum D (6 tasks — Multi-Module Architecture & Agent Protocol v2, `W04`/`W12`/`W15`):** Adding domain/application modules and imports under `[architecture]` `allow_imports`/`deny_imports` rules via `protocol_version: 2`.
 - **Execution & statistical protocol (`DELIVERY_PLAN.md`):**
   - Freeze all 24 task prompts, starter workspaces, and hidden independent acceptance tests (with SHA-256 manifest) before running any measured trial.

@@ -32,8 +32,8 @@ model API access comes at `T034` and `M06`.
 
 ## Self-contained task workflow
 
-Each task file (`04-tasks/T001-workspace-skeleton.md` through `T074`, plus
-`V2-TASKS.md` and `V3-TASKS.md`) is self-contained. After recording owner
+Each task contract file (`04-tasks/Tnnn-*.md`, with milestone summaries in
+`V1-TASKS.md`, `V2-TASKS.md`, and `V3-TASKS.md`) is self-contained. After recording owner
 baseline acceptance in `.execution/baseline-acceptance.md` and marking `T001`
 `READY` in `.execution/task-status.md`, instruct the agent:
 `"Kerjakan T001 sesuai blueprint dan catat bukti."`

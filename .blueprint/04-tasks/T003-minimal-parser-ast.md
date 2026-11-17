@@ -22,6 +22,11 @@ identifiers.
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `FRONT`, [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 
 ## Self-contained implementation context
+- **Block grammar change:** A block now allows zero or more `statement` entries
+  before its final expression: `block = "{", { statement }, expr, "}"` where
+  `statement = "let" ident "=" expr ";" | expr ";"`. The parser must accept
+  statement expressions (`expr;`) at the grammar level; the type-level `Unit`-only
+  restriction is enforced later by T021 (`WOLIO-TYPE-001` / `WOLIO-LINT-006`).
 - **Precedence ladder (lowest to highest, left-associative for binary ops):**
   1. `||`
   2. `&&`
@@ -48,6 +53,7 @@ Out of scope (owner):
 ## Acceptance criteria
 - [ ] Empty module and hello-world examples parse into spanned AST nodes
 - [ ] Every `CORE_V1` declaration (`type`, `record`, `enum`, `operation`, `implementation`, `test`), clause, pattern, and expression production has `FRONT` test coverage
+- [ ] Statement expressions (`expr;`) inside blocks are parsed into AST nodes distinct from `let` bindings
 - [ ] Precedence and `-x.value` binding order are verified by structural AST tests
 - [ ] Malformed declarations, trailing commas, chained comparisons (`a < b < c`, `a == b == c`), and V1/V2/V3 reserved keywords used as identifiers are rejected with `WOLIO-SYNTAX-001`
 - [ ] Integer literal boundaries (`9223372036854775807`, `-9223372036854775808` accepted; bare `9223372036854775808` rejected) are covered

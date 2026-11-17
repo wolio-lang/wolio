@@ -26,7 +26,7 @@ expressions—while rejecting them with `WOLIO-FEATURE-001` when `[language] ver
 ## Self-contained implementation context
 - **Lexer addition (`crates/wolio-lexer`):**
   - Add `TokenKind::DotDot` (`..`) for range expressions (`start..end`). Single `.` remains `TokenKind::Dot` (field access).
-  - V2 keywords (`for`, `in`, `with`, `bound`, `invariant`, `predicate`, `List`, `Map`, `Decimal`, `UInt`, `Bytes`, `format`) are already tokenized by `T002`.
+  - V2 keywords (`for`, `in`, `with`, `bound`, `invariant`, `predicate`, `List`, `Map`, `Decimal`, `UInt`, `Bytes`, `format`) and all 23 V1+V2+V3 reserved keywords (including `with_mock`, `where`, `fn`, `foreign`) are already tokenized by `T002`.
 - **AST additions (`crates/wolio-ast`):**
   ```rust
   pub struct PredicateDecl {
@@ -55,19 +55,29 @@ expressions—while rejecting them with `WOLIO-FEATURE-001` when `[language] ver
       pub lets: Vec<LetStmt>,
       pub body: Box<Expr>,
   }
+
+  // Expr::Call extended to support turbofish type arguments:
+  // pub struct CallExpr {
+  //     pub callee: Box<Expr>,
+  //     pub turbofish: Option<Vec<TypeAst>>,
+  //     pub args: Vec<Expr>,
+  //     pub span: Span,
+  // }
   ```
 - **Grammar rules (`CORE_V2.md`):**
   - `predicate = "predicate", ident, "(", [ fields ], ")", "->", "Bool", "{", expr, "}" ;`
   - `for_expr = "for", "(", ident, "in", iter_source, "with", ident, ":", type, "=", expr, ")", "{", "bound", expr, ";", "invariant", expr, ";", { "let", ident, "=", expr, ";" }, expr, "}" ;`
   - `iter_source = expr | expr, "..", expr ;`
+  - `call_expr = path, [ "::", "<", type_args, ">" ], "(", [ args ], ")" ;`
   - Omitting `bound expr;` or `invariant expr;`, or placing them in reverse order, fails parsing with `WOLIO-SYNTAX-001`.
-  - Using `predicate`, `for`, `..`, `format(...)`, or V2 type names (`UInt`, `Decimal`, `Bytes`, `List`, `Map`) under `LanguageVersion::V1` emits `WOLIO-FEATURE-001`. Still-reserved V3 keywords (`secret`, `Secret`, `resource`, `transaction`, `modifies`, `old`, `property`, `std`) continue to fail with `WOLIO-SYNTAX-001` if used as identifiers in V2.
+  - Generic call expressions MUST use turbofish `path::<TArgs>(...)` when explicit type arguments are passed (e.g. `List::empty::<Int>()`), eliminating Pratt parser ambiguity with the `<` comparison operator.
+  - Using `predicate`, `for`, `..`, `format(...)`, or V2 type names (`UInt`, `Decimal`, `Bytes`, `List`, `Map`) under `LanguageVersion::V1` emits `WOLIO-FEATURE-001`. Still-reserved V3 keywords (`secret`, `Secret`, `resource`, `transaction`, `modifies`, `old`, `property`, `std`, `with_mock`, `where`, `fn`, `foreign`) continue to fail with `WOLIO-SYNTAX-001` if used as identifiers in V2.
 
 ## Scope
 In scope:
 - `..` range token in `wolio-lexer`.
-- Spanned AST nodes for `PredicateDecl`, `ForExpr`, `IterSource`, and `format(...)` in `wolio-ast`.
-- Recursive-descent/Pratt parsing of `predicate`, `for_expr`, `iter_source`, and V2 builtin type applications (`List<T>`, `Map<K, V>`) in `wolio-parser`.
+- Spanned AST nodes for `PredicateDecl`, `ForExpr`, `IterSource`, and `format(...)`, plus turbofish type argument vectors in `CallExpr` in `wolio-ast`.
+- Recursive-descent/Pratt parsing of `predicate`, `for_expr`, `iter_source`, turbofish constructor calls (`List::empty::<T>()`, `Map::empty::<K, V>()`), and V2 builtin type applications in `wolio-parser`.
 - Version-gate checks emitting `WOLIO-FEATURE-001` when V2 syntax is parsed under `[language] version = "1"`.
 
 Out of scope (owner):
@@ -76,14 +86,16 @@ Out of scope (owner):
 ## Normative requirements
 - `for_expr` requires both `bound <expr>;` and `invariant <expr>;` in that exact order at the top of the loop block; omitting either or adding `break`/`continue`/`while` fails with `WOLIO-SYNTAX-001` (CORE_V2).
 - `predicate` declaration header requires explicit `-> Bool` return type annotation (`WOLIO-SYNTAX-001` if omitted) and a single expression body `{ expr }` (CORE_V2).
+- Turbofish syntax `path::<TArgs>(...)` is required for explicit generic type parameters in expression positions; parsing `name < a > (...)` as a generic call without turbofish is forbidden to prevent Pratt grammar collision with comparison operator `<` (CORE_V2).
 - Under `[language] version = "1"`, V2 keywords used as identifiers fail with `WOLIO-SYNTAX-001`, and valid V2 constructs (`predicate`, `for (...)`) fail with `WOLIO-FEATURE-001` (CORE_V1, CORE_V2, ADR-008).
-- V3 keywords (`secret`, `Secret`, `resource`, `transaction`, `modifies`, `old`, `property`, `std`) remain reserved in V2 and fail with `WOLIO-SYNTAX-001` when used as identifiers (CORE_V2, BASELINE-V2).
+- V3 keywords (`secret`, `Secret`, `resource`, `transaction`, `modifies`, `old`, `property`, `std`, `with_mock`, `where`, `fn`, `foreign`) remain reserved in V2 and fail with `WOLIO-SYNTAX-001` when used as identifiers (CORE_V2, BASELINE-V2).
 
 ## Acceptance criteria
 Positive and boundary:
 - [ ] Valid `for (item in items with acc: Int = 0) { bound ...; invariant ...; ... }` over both collection expressions and `start..end` ranges parses into `Expr::For` with exact byte spans
 - [ ] Valid `pub predicate Name(a: Int, b: Int) -> Bool { ... }` parses into `Declaration::Predicate`
-- [ ] `List<T>`, `Map<K, V>`, `Decimal`, `UInt`, `Bytes`, and `format("...", ...)` parse deterministically under `LanguageVersion::V2`
+- [ ] `List::empty::<Int>()`, `Map::empty::<String, Int>()`, `Decimal`, `UInt`, `Bytes`, and `format("...", ...)` parse deterministically under `LanguageVersion::V2`
+- [ ] Expression `a < b` unambiguously parses as a binary comparison, not a generic call
 
 Rejection and failure:
 - [ ] `for` loop missing `bound`, missing `invariant`, missing `with acc: Type = init`, or reversing `bound`/`invariant` order fails with `WOLIO-SYNTAX-001`

@@ -19,7 +19,7 @@ diffs and impact, and validate owner approval records.
 
 ## Authority
 - Normative: [LOCAL_PROTOCOL_V1.md](../02-specifications/protocol/LOCAL_PROTOCOL_V1.md), [APPROVAL_MATRIX_V1.md](../02-specifications/protocol/APPROVAL_MATRIX_V1.md), [MUTATION_SCHEMA_V1.md](../02-specifications/protocol/MUTATION_SCHEMA_V1.md), [EVIDENCE_MODEL.md](../02-specifications/verification/EVIDENCE_MODEL.md)
-- Decision: [ADR-007](../01-architecture/decisions/ADR-007-deterministic-identity-and-gated-automation.md)
+- Decision: [ADR-007](../01-architecture/decisions/ADR-007-deterministic-identity-and-gated-automation.md), [ADR-010](../01-architecture/decisions/ADR-010-vibe-native-zero-inspection-architecture.md)
 - Acceptance: [ACCEPTANCE_MATRIX.md](../05-quality/ACCEPTANCE_MATRIX.md) `AGENT`, [DEFINITION_OF_DONE.md](../05-quality/DEFINITION_OF_DONE.md)
 - Implementation layout: [IMPLEMENTATION_SPECIFICATION_V1.md](../03-implementation/IMPLEMENTATION_SPECIFICATION_V1.md)
 
@@ -27,7 +27,7 @@ diffs and impact, and validate owner approval records.
 In scope:
 - Path and symbol scope validation (including reference updates from
   rename/move), `..` traversal rejection and symlink-escape rejection.
-- Capability policy enforcement against project policy.
+- Macro-capability policy enforcement against project policy (`[capabilities]` in `wolio.toml`).
 - Deterministic risk-tier calculation (`AUTO`, `POST_REVIEW`, `HUMAN_REQUIRED`)
   from the complete plan diff and transitive impact (`APPROVAL_MATRIX_V1`).
 - Validation of owner-authored `HUMAN_REQUIRED` approval records (binding,
@@ -46,18 +46,22 @@ Out of scope (owner):
 - Tier precedence is `HUMAN_REQUIRED > POST_REVIEW > AUTO` across all operations
   and transitive impact; the agent cannot supply, lower or override the tier
   (LOCAL_PROTOCOL_V1, APPROVAL_MATRIX_V1).
-- `AUTO` covers only implementation edits, test additions, or private
-  declaration create/delete with empty `errors`/`effects`/`dependencies` and no
-  public, contract, capability, policy or boundary impact (APPROVAL_MATRIX_V1).
-- `POST_REVIEW` covers private rename/move and private contract edits whose
-  normalized predicates, signatures and `errors`/`effects`/`dependencies` sets
-  remain identical with no public impact (LOCAL_PROTOCOL_V1, APPROVAL_MATRIX_V1).
-- `HUMAN_REQUIRED` covers all public API/contract/rename/move/delete changes,
-  any non-identical (`unknown`) predicate change, any `errors`/`effects`/
-  `dependencies` set change, new private operations with non-empty sets,
-  capability/security/policy/schema/package-identity/architecture changes, and
-  unclassified changes. Deleting tests that are required evidence is rejected
-  regardless of tier (LOCAL_PROTOCOL_V1, APPROVAL_MATRIX_V1).
+- `AUTO` covers all internal evolutions that remain strictly within the declared
+  macro-capability envelope (`[capabilities]` in `wolio.toml`): internal implementation
+  edits, private declaration creation/deletion/renaming/moving, internal error variants,
+  internal effects/I/O within macro-capabilities, deterministic mechanical auto-pruning,
+  and test additions/updates conforming to hermetic schemas (APPROVAL_MATRIX_V1, ADR-010).
+- `POST_REVIEW` covers non-breaking additive public declarations (new `pub` operations/types)
+  or public module reorganization satisfying `[architecture]` rules that do not break
+  existing public callers or escalate macro-capabilities (LOCAL_PROTOCOL_V1, APPROVAL_MATRIX_V1).
+- `HUMAN_REQUIRED` is strictly and exclusively triggered by:
+  (a) External capability escalation (adding network domains/hosts, expanding filesystem
+      roots beyond sandbox, or adding undeclared system/WASI privileges);
+  (b) Breaking public API schema changes (deleting public symbols, modifying public
+      signatures/types, removing public enum variants, or weakening public contracts);
+  (c) Runtime or computational resource budget violations (`timeout_ms`, `max_memory_mb`).
+  Deleting tests that are required evidence or attempting unsafe injection/verification bypass
+  is rejected regardless of tier (LOCAL_PROTOCOL_V1, APPROVAL_MATRIX_V1, ADR-010).
 - `HUMAN_REQUIRED` approval records live outside agent-writable scope, bind to
   exact plan hash, diff hash, base snapshot, capabilities, actor scope and
   approver, are valid for one application only, expire within at most 24 hours,
@@ -70,12 +74,13 @@ Out of scope (owner):
 Positive and boundary:
 - [ ] `AUTO`, `POST_REVIEW` and `HUMAN_REQUIRED` tiers are derived deterministically according to `APPROVAL_MATRIX_V1`
 - [ ] Highest tier across a multi-operation plan and its transitive impact wins
+- [ ] Private declarations, internal error variants, and internal effects within capability envelope classify as `AUTO`
 - [ ] Valid owner approval bound to exact plan hash, diff hash and base snapshot authorizes one `HUMAN_REQUIRED` plan
 
 Rejection and failure:
 - [ ] Out-of-scope symbol/path edits, `..` path traversal and symlink escapes fail with `WOLIO-SCOPE-001`
 - [ ] Agent attempts to supply or downgrade approval tier, or write approval records, are rejected
-- [ ] Public/unknown contract changes, non-empty sets on new private operations, or set changes without owner approval are rejected
+- [ ] External capability escalation, breaking public API changes, or public contract weakening without owner approval fail with `WOLIO-SCOPE-001`
 - [ ] Deleting required test evidence is rejected at every tier
 - [ ] Expired (> 24h), revoked, reused or hash/snapshot-mismatched approvals are rejected (`WOLIO-SCOPE-001` / `WOLIO-STALE-001`)
 

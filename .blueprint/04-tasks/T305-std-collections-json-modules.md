@@ -8,7 +8,7 @@
 | Depends on | T304 |
 | Blocks | T306 |
 | Acceptance families | V3-STD (`std::collections` and `std::json`) |
-| Bounded areas | `crates/wolio-resolver`, `crates/wolio-types`, `crates/wolio-runtime`, `crates/wolio-codegen` |
+| Bounded areas | `crates/wolio-semantic` (submodules `resolver`, `types`), `crates/wolio-runtime`, `crates/wolio-codegen` |
 | Execution status | `.execution/task-status.md` (sole source) |
 | Report | `.execution/reports/T305.md` |
 

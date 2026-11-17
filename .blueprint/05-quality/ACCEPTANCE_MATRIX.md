@@ -18,10 +18,10 @@ passing tests.
 | `EVID` | `pass`/`fail`/`not_run`/`unknown`, deterministic test order, snapshot-bound evidence | Changed input or delete/recreate invalidates evidence, missing reachable-error/boundary tests, false/faulting tests | `T032` |
 | `QUERY` | Stable `inspect`, typed reverse paths, identical normalized predicate compatibility | Removed public API, changed nominal/signature/sets; `unknown` non-identical predicate implication | `T033` |
 | `TRIAL` | Three runnable examples, `init`/`check`/`run`/`test`/`inspect`/`impact`/`verify`, three change cycles | Wrong implementation passes types but fails `ensures`; documented limitations and raw pilot runs | `T034` |
-| `AGENT` | Typed AST mutation, raw-text rejection, `AUTO` and `POST_REVIEW` publication, review record, replay, finalization | Public/unknown contract without approval, tier bypass, self-review, stale/expired/revoked approval, traversal/symlinks (`WOLIO-SCOPE-001`), crash at publication steps, concurrent user edits (`WOLIO-STALE-001`), failed verify | `T040`–`T044` |
-| `ANALYZER` | Unconfigured literals pass, test/contract/`intent` exclusions, warning-only verification on `005` | Suppression bypass (`WOLIO-ANALYZER-001`), swallowed `Err` returning constant `Ok` (`002`), unused declared dependency/effect (`003`), forbidden literal or constant-folded expression (`004`), identical arms or test-literal mirroring warning (`005`) | `T044` |
+| `AGENT` | Typed AST mutation, raw-text rejection, `AUTO` and `POST_REVIEW` publication, Context Spine generation, Auto-Prune pass, MCTS state rollback, review record, replay, finalization | Breaking public contract or capability escalation without approval, tier bypass, self-review, stale/expired/revoked approval, traversal/symlinks (`WOLIO-SCOPE-001`), crash at publication steps, concurrent user edits (`WOLIO-STALE-001`), failed verify | `T040`–`T044` |
+| `ANALYZER` | Unconfigured literals pass, test/contract/`intent` exclusions, warning-only verification on `005`, Auto-Prune pass on `003` | Suppression bypass (`WOLIO-ANALYZER-001`), swallowed `Err` returning constant `Ok` (`002`), forbidden literal or constant-folded expression (`004`), identical arms or test-literal mirroring warning (`005`) | `T044` |
 | `NATIVE` | `VerifiedWolioIr` boundary, stable C ABI, release guards, interpreter/native differential corpus | Unverified/ill-typed IR, bad edges/terminators, matching faults and contract clauses, unsupported target | `T050`–`T053` |
-| `BENCH` | Corpus/prompts/hashes/versions, 24 × 10 paired runs, raw data and 10,000-resample bootstrap 95% intervals | Timeouts/failures retained, no selective omission, no unsupported improvement claims | `T060`–`T063` |
+| `BENCH` | Corpus/prompts/hashes/versions, 10 contract-and-protocol tasks across Wolio, Go, Rust, TS (5 seeds/task = 200 runs), paired bootstrap intervals | Timeouts/failures retained, no selective omission, no unsupported improvement claims (24-task algorithmic matrix evaluated in V2 `T215`) | `T060`–`T063` |
 | `PKG` | Deterministic graph, private Git helper, verified `~/.wolio/cache/`, `--locked --offline` install | Conflicting ranges/cycles, moved tags, altered bytes (`WOLIO-PACKAGE-INTEGRITY-001`), missing offline data, module collision, escaping symlinks/submodules | `T070`–`T071` |
 | `TOOL` | Format idempotence/comment/`sym_` preservation, LSP hover/definition/references/rename, clean Linux install | `fmt --check` changes nothing, stale editor version, unsaved buffer isolation, corrupt archive/checksum | `T072`–`T074` |
 
@@ -38,8 +38,8 @@ passing tests.
 | `V2-NATIVE` / `V2-BENCH` | V2 (`M11`) | Native LLVM parity on loops/collections/Decimal; formatter/LSP V2 support; 24-task algorithmic benchmark | `T213`–`T216` |
 | `V3-REGRESSION` | V3 (`M12`) | All V2 `BUG-*` fixtures pass; copy-on-write `List`/`Map` memory and latency benchmarks | `T301`–`T303` |
 | `V3-STD` / `V3-SECRET` | V3 (`M13`) | `std::string`, `std::collections`, `std::math`, `std::json`, `std::crypto`; `Secret<T>` leak/literal/format rejection (`WOLIO-SECURITY-001`) | `T304`–`T307` |
-| `V3-IO` / `V3-TX` | V3 (`M14`) | `std::time`/`fs`/`net`, `with_mock` test enforcement (`WOLIO-EFFECT-002`), linear `resource` (`WOLIO-RESOURCE-001`), `modifies`/`old(...)`, `transaction` rollback | `T308`–`T311` |
-| `V3-FUZZ` / `V3-RELEASE` | V3 (`M15`) | `property` declarations and `wolio verify --fuzz` shrinking counterexamples (`WOLIO-FUZZ-001`); full W01–W15 benchmark & V3 release | `T312`–`T315` |
+| `V3-IO` / `V3-TX` / `V3-FFI` | V3 (`M14`) | `std::time`/`fs`/`net`, `with_mock` test enforcement (`WOLIO-EFFECT-002`), linear `resource` acquisition & non-aliasing (`WOLIO-RESOURCE-001`), `modifies`/`old(...)`, `transaction` rollback, Capability-Gated FFI (`foreign type`, `foreign operation`, `WOLIO-FOREIGN-001`/`002`, `Foreign::Call`), fixed-width integers (`UInt8`..`UInt32`, `Int8`..`Int32`), and C glue contracts | `T308`–`T311`, `T316`–`T319` |
+| `V3-FUZZ` / `V3-RELEASE` | V3 (`M15`) | `property` declarations and `wolio verify --fuzz` shrinking counterexamples (`WOLIO-FUZZ-001`); full W01–W16 benchmark & V3 release | `T312`–`T315` |
 
 ## 3. Common execution gates
 
@@ -50,3 +50,17 @@ Every Rust work unit runs:
 (`T001` additionally runs `cargo check --workspace`).
 Keep tests independent of network except explicitly marked Git integration tests
 using controlled local repositories. Never require production credentials in CI.
+
+## 4. Standard conformance fixture header format
+
+Every test file under `tests/conformance/<family>/*.wol` must declare its execution
+mode and expectations via standard comment directives:
+
+```wol
+// @mode: lex | parse | check | run | verify | build
+// @expect-status: success | failure
+// @expect-code: WOLIO-SYNTAX-001
+// @expect-stdout: "expected output"
+```
+
+The test runner in `T004` parses these header directives deterministically.

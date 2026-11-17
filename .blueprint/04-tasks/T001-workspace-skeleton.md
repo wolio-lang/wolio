@@ -23,11 +23,12 @@ vertical slice, without implementing language behavior.
 
 ## Self-contained implementation context
 - **M01 workspace crates to create at `T001`:**
-  1. `crates/wolio-diagnostics` (or shared module in `wolio-ast`): zero-dependency leaf crate holding `Span { start: usize, end: usize }`, `Diagnostic`, `EvidenceRecord`, and JSON envelope types.
+  1. `crates/wolio-diagnostics`: zero-dependency leaf crate holding `Span { start: usize, end: usize }`, `Diagnostic`, `EvidenceRecord`, error codes, and JSON envelope types.
   2. `crates/wolio-ast`: depends only on `wolio-diagnostics`.
   3. `crates/wolio-lexer`: depends only on `wolio-diagnostics`.
   4. `crates/wolio-parser`: depends on `wolio-lexer`, `wolio-ast`, `wolio-diagnostics`.
   5. `crates/wolio-cli`: binary crate `wolio` depending on `wolio-lexer`, `wolio-parser`, `wolio-ast`, `wolio-diagnostics`.
+- **Standard Conformance Test Directory:** Create root `tests/conformance/` directory layout anticipating standard fixture comment headers (`// @mode: ...`, `// @expect-status: ...`, `// @expect-code: ...`).
 - Do **not** create stub crates for M02–M07 at `T001`.
 
 ## Scope

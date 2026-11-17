@@ -39,7 +39,7 @@ In scope:
 - Clean-environment installation test running both V1 (`version = "1"`) and V2 (`version = "2"`) end-to-end sample workflows.
 
 Out of scope (owner):
-- V3 (`M12`–`M15`, `T301`–`T315`) features (`std::*`, `Secret<T>`, capability I/O, transactions, property fuzzing).
+- V3 (`M12`–`M15`, `T301`–`T319`) features (`std::*`, `Secret<T>`, capability I/O, FFI, transactions, property fuzzing).
 
 ## Normative requirements
 - Release artifacts require a Linux x86_64 `.tar.gz`, SHA-256 checksums, exact pinned toolchain/lock metadata, license, and release notes (DELIVERY_POLICY, RELEASE_CRITERIA).

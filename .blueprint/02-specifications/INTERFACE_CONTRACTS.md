@@ -30,7 +30,11 @@ for `CORE_V2.md`, `"3"` for `CORE_V3.md`). Libraries may omit `[entrypoint]`;
 `run` and `build` require it. Entry operations must be public for package
 invocation. `init <directory>` creates this manifest, a valid `src/main.wol`
 returning `Unit`, and refuses to overwrite existing files. No implicit directory
-traversal outside the chosen target.
+traversal outside the chosen target. In V2, `[architecture]` configures module
+allow/deny policies (`WOLIO-ARCH-001`). In V3, `[capabilities]` configures authorized
+effects, and `[foreign]` configures `allowed_libraries = ["..."]` for capability-gated
+FFI (`WOLIO-FOREIGN-001`); edits to `[capabilities]` or `[foreign]` require `HUMAN_REQUIRED`
+approval.
 
 ## CLI and output
 
@@ -108,9 +112,9 @@ removal/addition without inventing that link.
    `ensures`, `effects`, `dependencies`, `errors`, `intent`, `implementation`,
    `test`, `for`, `let`, `if`, `else`, `match`, `true`, `false`.
 2. **V2 & V3 forward-reserved keywords (reserved in V1 lexer to prevent cross-version collision; `WOLIO-SYNTAX-001` if used as identifier):**
-   `in`, `with`, `bound`, `invariant`, `predicate`, `List`, `Map`, `Decimal`,
+   `in`, `with`, `bound`, `invariant`, `predicate`, `List`, `Map`, `Set`, `Decimal`,
    `UInt`, `Bytes`, `format`, `secret`, `Secret`, `resource`, `transaction`,
-   `modifies`, `old`, `property`, `std`.
+   `modifies`, `old`, `property`, `std`, `with_mock`, `where`, `fn`, `foreign`.
 3. **Reserved builtin names and bindings (`WOLIO-RESOLVE-001` if redeclared or shadowed):**
    `Bool`, `Int`, `String`, `Unit`, `Option`, `Result`, `None`, `Some`, `Ok`,
    `Err`, `unit`, `console`, `result`.
@@ -128,3 +132,33 @@ removal/addition without inventing that link.
 8. A `Result`-valued binding is handled only by exhaustive `match` or forwarding
    it as a returned expression; assigning, comparing, or merely mentioning it does
    not discharge handling obligations (`WOLIO-ERROR-001`).
+
+## Conformance test fixture header format
+
+To ensure consistent, machine-verifiable execution of test fixtures across all
+milestones (`tests/conformance/<family>/*.wol`), every standalone conformance
+source file must declare its expectations in a standardized comment header at
+the top of the file:
+
+```wol
+// @mode: lex | parse | check | run | verify | build
+// @expect-status: success | failure
+// @expect-code: WOLIO-SYNTAX-001
+// @expect-stdout: "expected output"
+```
+
+- `@mode` (required): Phase under test (`lex`, `parse`, `check`, `run`, `verify`, or `build`).
+- `@expect-status` (required): Expected CLI/harness outcome (`"success"` or `"failure"`).
+- `@expect-code` (mandatory when `@expect-status` is `"failure"`): Exact diagnostic code emitted.
+- `@expect-stdout` (optional): Literal console output expected when execution succeeds.
+
+The conformance runner in `T004` parses these header directives deterministically.
+
+## Native compilation contract
+
+At `M05`, `wolio-codegen` emits canonical, verified textual LLVM IR (`.ll`)
+derived strictly from `VerifiedWolioIr`. Executable binaries are produced by
+invoking the pinned `clang` toolchain (linking with `libwolio_runtime.a` produced
+by `wolio-runtime`). `wolio-codegen` does not depend on C++ FFI bindings such as
+`llvm-sys` or `inkwell`, ensuring hermetic, reproducible builds across developer
+environments and automated AI sessions.

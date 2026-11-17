@@ -1,20 +1,24 @@
 # Baseline acceptance
 
-Revision 1.4, 2026-11-10: **READY FOR OWNER REVIEW — NOT YET FROZEN**.
+Revision 1.5, 2026-11-14: **READY FOR OWNER REVIEW — NOT YET FROZEN**.
 
-Revision 1.4 (`ADR-008`) purges all 46 superseded historical draft files,
-resolves all remaining V1 task open items (`T020`, `T024`), hardens the V1
-anti-workaround analyzer (`WOLIO-ANALYZER-001`..`005`), forward-reserves all V2
-and V3 keywords in V1, makes task contracts self-contained, and establishes the
-non-colliding V2 (`BASELINE-V2.md`, `CORE_V2.md`, `V2-TASKS.md`) and V3
-(`BASELINE-V3.md`, `CORE_V3.md`, `V3-TASKS.md`) blueprints with mandatory
-inter-version Bug-Fix & Regression Gates (`M08` and `M12`).
+Revision 1.5 addresses industrial vibe-coding and systems architecture critiques:
+forward-reserves all systems keywords in V1 (23 keywords), enables canonical Wolio
+source payloads in the Agent Protocol to eliminate the JSON-AST paradox, introduces
+early scalar boundary/property fuzzing (`wolio verify --fuzz`), rescopes V1 M06 to
+a 10-task contract benchmark (200 runs), consolidates crates to 14 by unifying
+`crates/wolio-semantic`, pins native codegen to verified textual LLVM IR (`.ll`) +
+`clang`, standardizes conformance fixture headers, completes V2 systems capabilities
+(turbofish, checked bitwise, exact decimal with rounding, 960-run benchmark), completes
+V3 systems capabilities (capability-gated C FFI, fixed-width integers UInt8..UInt32/Int8..Int32,
+linear resource acquisition deadlock resolution, and tasks T316–T319), and eliminates
+task dual-source hazards.
 
 Acceptance record to complete after owner review:
 
 - Decision: pending
 - Owner/date: pending
-- Design revision: 1.4
+- Design revision: 1.5
 - Reviewed documentation commit/hash: pending
 - Exceptions/amendments: pending
 
